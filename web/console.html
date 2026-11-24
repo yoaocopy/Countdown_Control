@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Project Demo Countdown</title>
+  <title>Countdown Timer</title>
   <link rel="stylesheet" href="./style.css">
   <script defer src="./common.js"></script>
   <script defer src="./offline.js"></script>
@@ -11,7 +11,7 @@
 </head>
 <body class="console">
   <header class="topbar">
-    <h1 data-t="title">Project Demo Countdown</h1>
+    <h1 data-t="title">Countdown Timer</h1>
     <div class="toolbar">
       <span id="mode" class="tag"></span>
       <span id="connection" class="tag" role="status"></span>
@@ -41,12 +41,22 @@
     <div class="dashboard-columns">
       <div class="stack">
         <section id="local-stage" class="panel timer-panel">
-          <div class="section-heading"><h2 data-t="current">Current</h2>
-            <div class="timer-status"><span id="console-stage" class="tag" hidden></span><span id="phase" class="tag" role="status"></span></div>
+          <div id="timer-preview" class="timer-preview">
+            <section class="preview-current">
+              <h2 data-t="current">Current</h2>
+              <p id="current-name" class="current-name" data-placeholder>N/A</p>
+            </section>
+            <div class="preview-clock">
+              <p id="console-stage" class="preview-stage" hidden></p>
+              <div id="timer" class="timer">--:--</div>
+              <p id="phase" class="preview-status" role="status"></p>
+            </div>
+            <section class="upcoming">
+              <div><h3 data-t="nextUp">Next up</h3><p id="local-next">—</p></div>
+              <div><h3 data-t="onDeck">After next</h3><p id="local-after">—</p></div>
+            </section>
           </div>
-          <p id="current-name" class="current-name" data-placeholder>N/A</p>
-          <div id="timer" class="timer">05:00</div>
-          <div class="actions">
+          <div class="actions timer-controls">
             <button data-command="start" class="primary" data-t="start">Start</button>
             <button data-command="questions" class="primary" data-t="startQuestions" hidden>Start Q&amp;A</button>
             <button data-command="pause" data-t="pause" hidden>Pause</button>
@@ -54,10 +64,7 @@
             <button data-command="reset" data-t="reset">Reset</button>
             <button data-command="next" data-t="next">Next group</button>
             <button id="local-fullscreen" type="button" hidden data-t="fullscreen">Fullscreen</button>
-          </div>
-          <div class="upcoming local-stage-queue">
-            <div><h3 data-t="nextUp">Next up</h3><p id="local-next">—</p></div>
-            <div><h3 data-t="onDeck">After next</h3><p id="local-after">—</p></div>
+            <button id="preview-theme" type="button" data-t="lightTheme">Light theme</button>
           </div>
         </section>
         <section class="panel">
@@ -112,7 +119,13 @@
         </section>
       </div>
       <section class="panel queue-panel">
-        <div class="section-heading"><h2 data-t="queue">Group queue</h2><span id="group-count" class="tag"></span></div>
+        <div class="section-heading">
+          <h2 data-t="queue">Group queue</h2>
+          <div class="actions queue-heading-actions">
+            <span id="group-count" class="tag"></span>
+            <button id="copy-queue" type="button" data-t="copyQueue" disabled>Copy queue</button>
+          </div>
+        </div>
         <p id="empty" data-t="empty">Groups are optional.</p>
         <div id="queue-tools" class="actions queue-tools" hidden>
           <button id="use-group" class="primary" type="button" data-write data-t="useGroup">Set as current</button>
@@ -142,5 +155,11 @@
       </section>
     </div>
   </main>
+  <dialog id="copy-queue-dialog" aria-labelledby="copy-queue-title">
+    <h2 id="copy-queue-title" data-t="copyQueue">Copy queue</h2>
+    <p data-t="copyQueueManually">Copy the selected group names.</p>
+    <textarea id="copy-queue-text" rows="8" readonly aria-labelledby="copy-queue-title"></textarea>
+    <form method="dialog"><button data-t="close">Close</button></form>
+  </dialog>
 </body>
 </html>

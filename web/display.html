@@ -3,67 +3,83 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Project Demo Countdown</title>
+  <title>Countdown Timer</title>
   <link rel="stylesheet" href="./style.css">
   <script defer src="./common.js"></script>
   <script defer src="./offline.js"></script>
   <script defer src="./projection.js"></script>
   <script defer src="./display.js"></script>
 </head>
-<body class="projection">
+<body class="projection display-page">
   <header class="display-controls">
     <button id="display-mode" type="button" data-t="standalone">Standalone timer</button>
-    <a href="./two-stage.html" target="_blank" rel="noopener" data-t="twoStage">Two-stage timer</a>
+    <button id="standalone-stages" type="button" hidden data-t="enableTwoStage">Use two stages</button>
     <a href="./clock.html" target="_blank" rel="noopener" data-t="wallClock">Clock</a>
     <button id="display-theme" type="button" data-t="lightTheme">Light theme</button>
     <button id="language" type="button" aria-label="Switch to Chinese">CN/EN</button>
     <button id="clear-temporary" type="button" data-t="clearTemporary">Clear temporary state</button>
     <a href="./guide.html" target="_blank" rel="noopener" data-t="guide">Guide</a>
     <button id="enable-sound" type="button" hidden data-t="enableSound">Enable sound</button>
-    <button id="fullscreen" data-t="fullscreen">Fullscreen</button>
+    <button id="fullscreen" type="button" data-t="fullscreen">Fullscreen</button>
   </header>
   <p id="display-notice" class="display-notice" role="status" hidden></p>
-  <p id="connection" class="display-connection" role="status"></p>
-  <section id="standalone-controls" class="standalone-controls" hidden>
-    <form id="standalone-duration">
-      <label for="standalone-minutes"><span data-t="timerMinutes">Minutes</span>
-        <input id="standalone-minutes" type="number" inputmode="numeric" min="0" max="99" step="1" required>
-      </label>
-      <label for="standalone-seconds"><span data-t="timerSeconds">Seconds</span>
-        <input id="standalone-seconds" type="number" inputmode="numeric" min="0" max="59" step="1" required>
-      </label>
-      <button id="standalone-set" data-t="setTime">Set time</button>
-    </form>
-    <div class="actions standalone-actions">
-      <button id="standalone-start" class="primary" type="button" data-t="start">Start</button>
-      <button id="standalone-pause" type="button" data-t="pause" hidden>Pause</button>
-      <button id="standalone-reset" type="button" data-t="reset">Reset</button>
-    </div>
-    <div class="standalone-sound-controls">
-      <label><span data-t="sound">Finish sound</span><select id="standalone-sound">
-        <option value="beep" data-t="beep">Rising beeps</option><option value="double" data-t="double">Double beep</option><option value="tone" data-t="tone">Tone</option>
-        <option value="chime" data-t="chime">Chime</option><option value="bell" data-t="bell">Bell</option><option value="mute" data-t="mute">Mute</option>
-      </select></label>
-      <label><span><span data-t="volume">Volume</span> <output id="standalone-volume-value" for="standalone-volume">70%</output></span>
-        <input id="standalone-volume" type="range" min="0" max="100" value="70">
-      </label>
-      <button id="standalone-preview" type="button" data-t="testSound">Test sound</button>
-    </div>
-  </section>
-  <main class="stage">
-    <section class="stage-current">
-      <h1 data-t="current">Current</h1>
-      <p id="current-name" class="stage-name" data-placeholder>N/A</p>
-    </section>
-    <section id="clock" class="stage-clock">
-      <p id="active-stage" class="projection-stage-label" hidden></p>
-      <div id="timer" class="timer">--:--</div>
-      <div id="phase" class="stage-phase" role="status"></div>
-    </section>
-    <section class="upcoming">
-      <div><h2 data-t="nextUp">Next up</h2><p id="first">—</p></div>
-      <div><h2 data-t="onDeck">After next</h2><p id="second">—</p></div>
-    </section>
-  </main>
+  <p id="connection" class="display-connection" role="status" hidden></p>
+  <div class="projection-layout">
+    <main class="stage">
+      <section class="stage-current">
+        <h1 data-t="current">Current</h1>
+        <p id="current-name" class="stage-name" data-placeholder>N/A</p>
+      </section>
+      <section id="clock" class="stage-clock">
+        <div id="stage-identification" class="stage-identification" hidden>
+          <p id="active-stage" aria-live="polite">Presentation</p>
+          <p id="next-stage" class="next-stage"><span data-t="nextStage">Next stage</span> <strong>Q&amp;A</strong> <span id="next-time">02:00</span></p>
+        </div>
+        <div id="timer" class="timer">--:--</div>
+        <div id="phase" class="stage-phase" role="status"></div>
+      </section>
+      <section class="upcoming">
+        <div><h2 data-t="nextUp">Next up</h2><p id="first">—</p></div>
+        <div><h2 data-t="onDeck">After next</h2><p id="second">—</p></div>
+      </section>
+    </main>
+    <aside id="standalone-controls" class="standalone-controls projection-timer-controls" hidden>
+      <form id="standalone-duration" class="stage-times">
+        <fieldset id="stage-fields">
+          <legend class="sr-only" data-t="saveTimes">Set times</legend>
+          <fieldset>
+            <legend id="standalone-duration-label" data-t="defaultDuration">Default duration</legend>
+            <label><span data-t="timerMinutes">Minutes</span><input id="standalone-minutes" type="number" min="0" max="99" value="5" inputmode="numeric" required></label>
+            <label><span data-t="timerSeconds">Seconds</span><input id="standalone-seconds" type="number" min="0" max="59" value="0" inputmode="numeric" required></label>
+          </fieldset>
+          <fieldset id="standalone-questions" hidden disabled>
+            <legend>Q&amp;A</legend>
+            <label><span data-t="timerMinutes">Minutes</span><input id="questions-minutes" type="number" min="0" max="99" value="2" inputmode="numeric" required></label>
+            <label><span data-t="timerSeconds">Seconds</span><input id="questions-seconds" type="number" min="0" max="59" value="0" inputmode="numeric" required></label>
+          </fieldset>
+          <button id="standalone-set" type="submit" data-t="setTime">Set time</button>
+        </fieldset>
+      </form>
+      <div class="stage-operations">
+        <label id="standalone-auto" class="auto-advance" hidden><input id="auto-advance" type="checkbox"><span data-t="autoAdvance">Automatically start Q&amp;A</span></label>
+        <div class="actions">
+          <button id="standalone-start" type="button" class="primary" data-t="start">Start</button>
+          <button id="standalone-pause" type="button" data-t="pause" hidden>Pause</button>
+          <button id="standalone-reset" type="button" data-t="reset">Reset</button>
+        </div>
+      </div>
+      <div class="standalone-sound-controls">
+        <label><span data-t="sound">Finish sound</span><select id="standalone-sound">
+          <option value="beep" data-t="beep">Rising beeps</option><option value="double" data-t="double">Double beep</option>
+          <option value="tone" data-t="tone">Tone</option><option value="chime" data-t="chime">Chime</option>
+          <option value="bell" data-t="bell">Bell</option><option value="mute" data-t="mute">Mute</option>
+        </select></label>
+        <label><span><span data-t="volume">Volume</span> <output id="standalone-volume-value" for="standalone-volume">70%</output></span>
+          <input id="standalone-volume" type="range" min="0" max="100" value="70">
+        </label>
+        <button id="standalone-preview" type="button" data-t="testSound">Test sound</button>
+      </div>
+    </aside>
+  </div>
 </body>
 </html>

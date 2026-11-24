@@ -1,8 +1,10 @@
-# Project Demo Countdown · 学生项目演示倒计时
+# Countdown Timer · 倒计时
+
+A countdown timer you can configure and control remotely. 一个可远程设置和控制的倒计时。
 
 [Open the bilingual HTML guide · 打开双语网页版使用说明](web/guide.html)
 
-[Two-stage Presentation and Q&A timer · 双阶段演示与问答倒计时](web/two-stage.html)
+[Single- and two-stage projection · 单阶段与双阶段投影](web/display.html)
 
 [Clock · 时钟](web/clock.html) can open directly or at `/clock` on the server. Choose device time, the countdown server’s time, or both. 主钟默认使用电脑时区，支持字号调整和多城市显示。
 
@@ -16,7 +18,7 @@ Keep the `web` folder together and double-click `web/console.html`. The same con
 
 The **Switch to Offline** button also works in an already-open server page. If the server is unreachable, use the timer panel’s **Fullscreen** button or open the local HTML files so a separate projection can load. On its first use on that server address, the browser’s offline queue starts with the latest received online queue and settings. Later offline changes stay in browser storage. Use export and import to transfer changes between modes or computers. Use **Switch to Online** for server-based control from another computer.
 
-For a simple timer, double-click `web/display.html`, or click **Standalone timer** on `/display`. Enter minutes and seconds and select **Set time**. Use **Start**, **Pause**, **Resume**, or **Reset**. Use **Follow console** to return to the live projection. **Light theme** and **Dark theme** apply in both modes. The display remembers the theme and duration in that browser.
+For a local timer, double-click `web/display.html`, or click **Standalone timer** on `/display`. Use **Use two stages** or **Use one stage** as needed. Enter the duration and save it before starting. In **Follow console** mode, the same display shows the mode chosen in the console.
 
 ### 1. Public server (default)
 
@@ -70,7 +72,7 @@ python server.py --help
 1. Set Windows to **Extend** with **Win+P**. Keep the student’s presentation on its own output. Use **Open projection** on the venue computer in a separate Edge or Chrome window. The regular projection plays the saved finish sound by default.
 2. Drag the window onto the countdown projector, or use **Win+Shift+Left/Right** to move it. Choose the correct Windows audio output, then click **Fullscreen**, which also enables sound when the browser requires a click. **Enable sound** is available if your browser needs it. **Esc** exits browser fullscreen.
 3. The teacher can select **Preview on projection** to audition the sound chosen in the settings form. **Save settings** applies it to subsequent finishes. Choose **Mute** or set volume to **0** for silent timing. Refreshing or reconnecting never replays a past finish.
-4. An empty queue can start at **N/A**. To use groups, paste one name per line, select a group, and click **Set as current**. Use **Batch edit** for staged reordering and deletion, then apply the changes together. A new default duration applies on the next reset or group switch if a session is underway.
+4. An empty queue can start at **N/A**. To use groups, paste one name per line, select a group, and click **Set as current**. Use **Batch edit** for staged reordering and deletion, then apply the changes together. **Copy queue** copies the saved order as one name per line. A new default duration applies on the next reset or group switch if a session is underway.
 
 ### 3. Windows LAN backup
 
@@ -87,7 +89,7 @@ python server.py --help
 
 服务器页面已经打开时，点**切换到离线模式**也能继续使用本机计时。如果服务器已失联，可用计时区的**全屏**，或打开本地 HTML 来加载独立投影窗口。同一服务器地址首次启用离线时，会采用浏览器最近收到的队列和设置。之后离线修改保存在浏览器里，需要带回在线模式或换电脑时可导出和导入。跨电脑控制请切到在线模式。
 
-只需简单倒计时时，可双击 `web/display.html`，或在 `/display` 点击**独立计时**。输入分钟和秒，点**设置时长**，即可开始、暂停、继续和重置。点**跟随控制台**可回到同步投影。**浅色主题**和**深色主题**适用于两种模式，浏览器会记住主题和独立计时时长。
+要独立计时，可双击 `web/display.html`，或在 `/display` 点击**独立计时**，按需切换单阶段或双阶段，再设置时长。点**跟随控制台**可回到同步投影，由控制台决定阶段模式。
 
 ### 1. 公共服务器（默认）
 
@@ -116,7 +118,7 @@ python server.py --help
 1. 在现场按 **Win+P** 选择**扩展**，学生演讲继续使用原来的屏幕。现场电脑使用独立的 Edge 或 Chrome 窗口**打开投影页**。普通投影页默认播放设置中的到时铃声。
 2. 将窗口拖到倒计时投影，或按 **Win+Shift+左／右方向键**移动。确认 Windows 音频输出后点**全屏**。浏览器要求先点击页面时，这一步也会启用声音。也可以点投影页的**启用声音**。按 **Esc** 退出。
 3. 老师可用**在投影端试听**播放设置表单里选中的铃声。保存后会应用到后续归零。选择**静音**或把音量调至 **0** 可安静计时。刷新或断线重连都不会补播已经发生的铃声。
-4. 空队列也能用 **N/A** 开始计时。需要小组时，每行粘贴一个组名，选中后点**设为当前**。用**批量编辑**暂存排序或删除，再点**应用更改**。计时中改默认时长，会在下次重置或切组时生效。
+4. 空队列也能用 **N/A** 开始计时。需要小组时，每行粘贴一个组名，选中后点**设为当前**。用**批量编辑**暂存排序或删除，再点**应用更改**。点**复制当前队列**可按已生效的顺序复制组名，每行一个。计时中改默认时长，会在下次重置或切组时生效。
 
 ### 3. Windows 局域网备用
 

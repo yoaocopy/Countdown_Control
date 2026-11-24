@@ -296,9 +296,8 @@ const OfflineCountdown = (() => {
         });
         return { update() {}, serverNow: now, close: () => listeners.delete(callbacks) };
       },
-      projectionUrl(twoStage = false) {
-        const page = twoStage ? "two-stage" : "display";
-        const url = appUrl(page + (isFile ? ".html" : ""));
+      projectionUrl() {
+        const url = appUrl(isFile ? "display.html" : "display");
         url.searchParams.set("mode", "offline");
         return url.href;
       },

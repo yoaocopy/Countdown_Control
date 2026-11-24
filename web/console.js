@@ -1,5 +1,5 @@
 (() => {
-const { $, t, setupLanguage, connect, drawTime, remainingTime, currentName, stageName, phaseLabel, finalPalette,
+const { $, t, setupLanguage, connect, paintCountdown, currentName, stageName, phaseLabel,
   post, showNotice, isFile, appUrl, storage, temporary, setupTemporaryClear, createTimerAudio } = CountdownUI;
 
 let state;
@@ -19,6 +19,7 @@ let lastDraft = "null";
 let service;
 let local;
 let offline = false;
+let previewLight = storage("localStorage", "countdown-display-theme") === "light";
 let lastOnlineState;
 let storageFailed = false;
 const notice = key => showNotice($("notice"), key);
@@ -189,7 +190,8 @@ function render() {
   $("local-after").textContent = state?.upcoming[1]?.name || "—";
   $("local-fullscreen").hidden = !offline;
   $("phase").textContent = phaseLabel(state) || "—";
-  $("phase").dataset.phase = state?.phase || "";
+  $("timer-preview").dataset.theme = previewLight ? "light" : "dark";
+  $("preview-theme").textContent = t(previewLight ? "darkTheme" : "lightTheme");
   $("console-stage").hidden = !state?.twoStage;
   $("console-stage").textContent = state?.twoStage ? stageName(state.stage) : "";
   $("open-display").href = projectionUrl();
@@ -218,6 +220,7 @@ function render() {
     control.disabled = !canWrite() || control.dataset.unavailable === "true";
   });
   const batchStale = batch && batch.base !== signature;
+  $("copy-queue").disabled = !state?.groups.length;
   $("queue-tools").hidden = !!batch || !state?.groups.length;
   $("use-group").disabled = !canWrite() || !candidate;
   $("batch-tools").hidden = !batch;
@@ -265,10 +268,9 @@ function renderStageSettings() {
 }
 
 function projectionUrl() {
-  const twoStage = !!state?.twoStage;
-  if (offline && local) return local.projectionUrl(twoStage);
-  const url = appUrl(twoStage ? "two-stage" : "display");
-  if (twoStage) url.searchParams.set("follow", "1");
+  if (offline && local) return local.projectionUrl();
+  const url = appUrl("display");
+  url.searchParams.set("follow", "1");
   return url.href;
 }
 
@@ -284,7 +286,12 @@ function receive(next) {
   state = next;
   if (pendingBatch) restoreBatch();
   render();
-  drawTime(state, service.serverNow);
+  paintPreview();
+}
+
+function paintPreview() {
+  const preview = $("timer-preview");
+  paintCountdown(preview, preview, state, service.serverNow, previewLight);
 }
 
 const onlineCallbacks = {
@@ -476,6 +483,37 @@ $("export").onclick = () => {
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
+$("copy-queue").onclick = async () => {
+  const text = state?.groups.map(group => group.name).join("\n");
+  if (!text) return;
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      notice("queueCopied");
+      return;
+    } catch {
+      // Use selection-based copy when browser clipboard permissions are unavailable.
+    }
+  }
+  const previous = document.activeElement;
+  const buffer = document.createElement("textarea");
+  buffer.className = "clipboard-buffer";
+  buffer.value = text;
+  buffer.readOnly = true;
+  document.body.append(buffer);
+  buffer.select();
+  let copied = false;
+  try { copied = document.execCommand("copy"); } catch { /* Use the manual copy dialog below. */ }
+  buffer.remove();
+  previous?.focus();
+  if (copied) {
+    notice("queueCopied");
+    return;
+  }
+  $("copy-queue-text").value = text;
+  $("copy-queue-dialog").showModal();
+  $("copy-queue-text").select();
+};
 $("import").onclick = () => $("import-file").click();
 $("import-file").onchange = async event => {
   const file = event.target.files[0];
@@ -524,6 +562,18 @@ $("local-fullscreen").onclick = async () => {
     notice("fullscreenFailed");
   }
 };
+$("preview-theme").onclick = () => {
+  previewLight = !previewLight;
+  storage("localStorage", "countdown-display-theme", previewLight ? "light" : "dark");
+  render();
+  paintPreview();
+};
+window.addEventListener("storage", event => {
+  if (event.key !== "countdown-display-theme") return;
+  previewLight = event.newValue === "light";
+  render();
+  paintPreview();
+});
 
 switchMode(isFile || temporary("console-mode") === "offline");
 setupLanguage(() => {
@@ -543,13 +593,5 @@ setupTemporaryClear(() => {
   switchMode(isFile);
   notice("temporaryCleared");
 });
-setInterval(() => {
-  const stage = $("local-stage");
-  const remaining = state ? remainingTime(state, service.serverNow) : 0;
-  const seconds = drawTime(state, service.serverNow, remaining);
-  const finalCountdown = finalPalette(stage, state?.phase, document.fullscreenElement === stage ? remaining : 0);
-  stage.dataset.phase = state?.phase || "";
-  const warning = !finalCountdown && state?.phase === "running" && seconds > 0 && seconds <= state.settings.warning;
-  stage.dataset.effect = warning ? state.settings.effect : "off";
-}, 100);
+setInterval(paintPreview, 100);
 })();

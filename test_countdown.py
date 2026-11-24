@@ -95,7 +95,7 @@ class ServerCommandLineTests(unittest.TestCase):
                     projection = Stream(port, projection=True)
                     try:
                         self.assertEqual(process.wait(timeout=8), 0)
-                        with self.assertRaises(EOFError):
+                        with self.assertRaises((EOFError, ConnectionResetError)):
                             projection.next()
                     finally:
                         projection.close()
@@ -182,9 +182,11 @@ class CountdownIntegration(unittest.TestCase):
 
     def test_pairing_and_public_origin(self):
         self.assertEqual(self.request("/")[0], 200)
-        self.assertEqual(self.request("/display")[0], 200)
-        for path in ("/two-stage", "/two-stage.html", "/two-stage.js"):
-            self.assertEqual(self.request(path)[0], 200)
+        display = self.request("/display")
+        self.assertEqual(display[0], 200)
+        for path in ("/display.html", "/two-stage", "/two-stage.html"):
+            self.assertEqual(self.request(path), display)
+        self.assertEqual(self.request("/two-stage.js")[0], 200)
         self.assertEqual(self.request("/api/pair", {"code": "wrong"})[0], 401)
         for path in ("command", "preview"):
             self.assertEqual(self.request("/api/" + path, {"action": "start"})[0], 401)

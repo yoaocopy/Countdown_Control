@@ -23,8 +23,9 @@ ROOT = Path(__file__).resolve().parent
 ASSETS = {
     "/": ("console.html", "text/html"),
     "/display": ("display.html", "text/html"),
-    "/two-stage": ("two-stage.html", "text/html"),
-    "/two-stage.html": ("two-stage.html", "text/html"),
+    "/display.html": ("display.html", "text/html"),
+    "/two-stage": ("display.html", "text/html"),
+    "/two-stage.html": ("display.html", "text/html"),
     "/guide.html": ("guide.html", "text/html"),
     "/clock": ("clock.html", "text/html"),
     "/clock.html": ("clock.html", "text/html"),

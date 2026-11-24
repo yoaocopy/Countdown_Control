@@ -1,6 +1,7 @@
 const CountdownUI = (() => {
 const strings = {
-  title: ["Project Demo Countdown", "学生项目演示倒计时"],
+  title: ["Countdown Timer", "倒计时"],
+  description: ["A countdown timer you can configure and control remotely.", "一个可远程设置和控制的倒计时。"],
   guide: ["Guide", "使用说明"], guideTitle: ["Countdown guide", "倒计时使用说明"],
   wallClock: ["Clock", "时钟"], clockLocal: ["Device time", "本机时间"],
   clockNetwork: ["Network time", "网络时间"], clockBoth: ["Both", "同时显示"],
@@ -13,7 +14,7 @@ const strings = {
   clockUnavailable: ["Network time unavailable", "网络时间暂不可用"],
   clockEnterServer: ["Enter a countdown server address to sync network time.", "输入倒计时服务器地址后可同步网络时间。"],
   clockInvalidServer: ["Enter a valid HTTP or HTTPS console address.", "请输入有效的 HTTP 或 HTTPS 控制台地址。"],
-  twoStage: ["Two-stage timer", "双阶段倒计时"], singleStage: ["Open single timer", "打开单阶段投影"],
+  enableTwoStage: ["Use two stages", "切换到双阶段"], enableSingleStage: ["Use one stage", "切换到单阶段"],
   autoAdvance: ["Automatically start Q&A", "自动开始 Q&A"], startQuestions: ["Start Q&A", "开始 Q&A"],
   nextStage: ["Next stage", "下一阶段"],
   waitingQuestions: ["Ready for Q&A", "等待开始 Q&A"], saveTimes: ["Set times", "设置时长"],
@@ -48,6 +49,8 @@ const strings = {
   reset: ["Reset", "重置"], ready: ["Ready", "待开始"], running: ["Running", "计时中"],
   paused: ["Paused", "已暂停"], finished: ["Time’s up", "时间到"],
   queue: ["Group queue", "小组队列"], empty: ["Groups are optional.", "可按需添加小组。"],
+  copyQueue: ["Copy queue", "复制当前队列"], queueCopied: ["Queue copied.", "已复制当前队列。"],
+  copyQueueManually: ["Copy the selected group names.", "请手动复制已选中的组名。"], close: ["Close", "关闭"],
   useGroup: ["Set as current", "设为当前"], editQueue: ["Batch edit", "批量编辑"],
   candidate: ["Selected", "已选中"],
   batchHelp: ["Drag to reorder. Check groups to delete them on apply.", "拖动调整顺序，勾选待删除的小组。应用后统一生效。"],
@@ -318,14 +321,14 @@ function finalPalette(node, phase, remaining, light = false) {
   const active = phase === "running" && remaining > 0 && remaining <= 10000;
   if (active) {
     const elapsed = 10000 - remaining;
-    const flash = remaining <= 2000 && !reducedMotion.matches;
+    const motion = !reducedMotion.matches;
+    const flash = motion && remaining <= 2000;
     const alternate = flash && Math.floor((2000 - remaining) / 500) % 2 === 1;
-    const soft = remaining > 5000;
-    const pulse = reducedMotion.matches ? 0 : (1 - Math.cos(elapsed / 2500 * 2 * Math.PI)) * 1.5;
-    const contrast = soft ? 5 + elapsed / 5000 * 17 + pulse :
-      22 + (elapsed - 5000) / 5000 * 78;
+    const breath = motion && !flash ? (1 - Math.cos(elapsed / 1000 * 2 * Math.PI)) / 2 : 0;
+    const contrast = flash ? 68 + (2000 - remaining) / 2000 * 32
+      : motion ? breath * (88 + elapsed / 8000 * 12) : elapsed / 10000 * 25;
     node.dataset.finalPalette = light !== alternate ? "light" : "dark";
-    node.dataset.finalPhase = flash ? "flash" : soft ? "soft" : "strong";
+    node.dataset.finalPhase = flash ? "flash" : motion ? "breathe" : "steady";
     node.style.setProperty("--final-contrast", contrast.toFixed(1) + "%");
   } else if (node.hasAttribute("data-final-palette")) {
     delete node.dataset.finalPalette;
@@ -337,7 +340,9 @@ function finalPalette(node, phase, remaining, light = false) {
 
 const soundPatterns = {
   beep: [
-    [0, 1000, .13, 1.05], [.84, 1160, .14, 1.23], [1.51, 1320, .16, 1.42], [2, 1480, 1, 1.55],
+    [0, 1220, .09, 1.05], [.49, 1220, .09, 1.15], [.91, 1220, .09, 1.25],
+    [1.26, 1220, .095, 1.35], [1.55, 1220, .095, 1.45], [1.79, 1220, .095, 1.5],
+    [2, 1480, 1, 1.55],
   ],
   double: [[0, 1140, .16, 1.4], [.24, 1230, .16, 1.4]],
   tone: [[0, 700, .95, 1]],
@@ -393,16 +398,23 @@ function createTimerAudio() {
   return { prepare, unlock, stop, play, get ready() { return context?.state === "running"; } };
 }
 
-function drawTime(state, serverNow, remaining) {
-  if (!state) return;
-  const seconds = Math.ceil((remaining ?? remainingTime(state, serverNow)) / 1000);
-  const text = [Math.floor(seconds / 60), seconds % 60].map(value => String(value).padStart(2, "0")).join(":");
-  if ($("timer").textContent !== text) $("timer").textContent = text;
+function paintCountdown(palette, clock, state, clockNow, light) {
+  const remaining = state ? remainingTime(state, clockNow) : 0;
+  const seconds = Math.ceil(remaining / 1000);
+  const digits = state ? [Math.floor(seconds / 60), seconds % 60].map(value => String(value).padStart(2, "0")).join(":") : "--:--";
+  const timer = $("timer");
+  if (timer.textContent !== digits) timer.textContent = digits;
+  const final = finalPalette(palette, state?.phase, remaining, light);
+  const settings = state?.settings;
+  const warning = !final && settings && state.phase === "running" && seconds > 0 && seconds <= settings.warning;
+  clock.dataset.effect = warning ? settings.effect : "off";
+  clock.dataset.phase = state?.phase || "";
   return seconds;
 }
 
-return { $, t, setupLanguage, connect, drawTime, remainingTime, currentName, stageName, phaseLabel, finalPalette, reducedMotion,
-  post, showNotice, isFile, appUrl, storage, temporary, setupTemporaryClear, restoreClock, rememberClock, createTimerAudio };
+return { $, t, setupLanguage, connect, remainingTime, currentName, stageName, phaseLabel, reducedMotion,
+  post, showNotice, isFile, appUrl, storage, temporary, setupTemporaryClear, restoreClock, rememberClock, createTimerAudio,
+  paintCountdown };
 })();
 
 if (document.body.classList.contains("guide-page")) {
