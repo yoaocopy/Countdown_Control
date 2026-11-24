@@ -15,9 +15,10 @@ from server import ROOT, Event, Service, parse_pairing_code, parse_run_duration
 
 
 class Stream:
-    def __init__(self, port, projection=False):
+    def __init__(self, port, projection=False, overlay=False):
         self.connection = http.client.HTTPConnection("127.0.0.1", port, timeout=4)
-        self.connection.request("GET", "/api/events?view=projection" if projection else "/api/events")
+        self.connection.request("GET", "/api/events?view=projection" if projection or overlay else "/api/events",
+                                headers={"X-Countdown-Overlay": "1"} if overlay else {})
         self.response = self.connection.getresponse()
         assert self.response.status == 200
         assert self.response.getheader("X-Accel-Buffering") == "no"
@@ -195,6 +196,52 @@ class CountdownIntegration(unittest.TestCase):
         self.assertEqual(self.request("/api/pair", {"code": self.event.code}, origin="https://elsewhere.example")[0], 403)
         self.assertEqual(self.request("/api/pair", {"code": self.event.code}, origin="https://timer.example.edu")[0], 200)
 
+    def test_overlay_appearance_is_paired_persistent_and_keeps_timer_running(self):
+        appearance = dict(position="right-middle", layout="compact-top", width=440, height=225, offsetX=0, offsetY=0,
+                          windowOpacity=75, backgroundOpacity=35, textOnly=False, edge="fade")
+        self.assertEqual(self.command(None, "overlay", overlay=appearance)[0], 401)
+        teacher = self.pair()
+        self.command(teacher, "start")
+        projection = self.stream(projection=True)
+        self.assertIsNone(projection.state["overlay"])
+        self.assertEqual(self.command(teacher, "overlay", overlay=dict(appearance, width=True))[0], 400)
+        status, changed = self.command(teacher, "overlay", overlay=appearance)
+        self.assertEqual(status, 200)
+        self.assertEqual(changed["overlay"], dict(appearance, revision=1))
+        self.assertEqual(changed["deadline"], projection.state["deadline"])
+        self.assertEqual(projection.next(), ("state", changed))
+        self.command(teacher, "add", names=["Team"])
+        self.assertEqual(self.view()["overlay"], changed["overlay"])
+        self.stop()
+        self.start()
+        self.assertEqual(self.view()["overlay"], changed["overlay"])
+        self.assertEqual(self.view()["phase"], "ready")
+
+    def test_overlay_legacy_text_preset_migrates_to_card_with_text_only(self):
+        saved = dict(position="keep", layout="text", width=500, height=295, offsetX=0, offsetY=0,
+                     windowOpacity=100, backgroundOpacity=80, revision=1)
+        configuration = {key: self.view()[key] for key in ("version", "groups", "current", "settings")}
+        self.path.write_text(json.dumps(dict(configuration, overlay=saved)), encoding="utf-8")
+        self.stop()
+        self.start()
+        self.assertEqual(self.view()["overlay"], dict(saved, layout="card", textOnly=True, edge="solid"))
+
+    def test_overlay_readback_requires_pairing_and_report_token_cannot_control(self):
+        desktop = Stream(self.port, overlay=True)
+        self.addCleanup(desktop.close)
+        projection = self.stream(projection=True)
+        teacher = self.pair()
+        settings = dict(layout="compact", position="custom", offsetX=275, offsetY=24, width=440, height=225,
+                        windowOpacity=85, backgroundOpacity=60, textOnly=False, edge="fade")
+        body = dict(appearance=settings, screen=dict(width=1600, height=900))
+        self.assertEqual(self.request("/api/overlay/report", body, projection.client)[0], 401)
+        self.assertEqual(self.request("/api/overlay/report", body, desktop.client)[0], 200)
+        self.assertEqual(self.command(desktop.client, "start")[0], 401)
+        self.assertEqual(self.request("/api/overlay/clients", {}, desktop.client)[0], 401)
+        self.assertEqual(self.request("/api/overlay/clients", {}, teacher),
+                         (200, {"clients": [dict(device=1, **body)]}))
+        self.assertIsNone(self.view()["overlay"])
+
     def test_clock_routes_and_public_time_endpoint(self):
         for path in ("/clock", "/clock.html", "/clock.js"):
             self.assertEqual(self.request(path)[0], 200)
@@ -233,23 +280,46 @@ class CountdownIntegration(unittest.TestCase):
         self.command(teacher, "add", names=["First", "Second"])
         self.command(teacher, "settings", settings=dict(self.view()["settings"],
             duration=10, questionsDuration=20, twoStage=True, autoAdvance=True))
-        projection = self.stream()
+        projection = self.stream(projection=True)
         self.command(teacher, "start")
         running = projection.next()[1]
         self.assertEqual(running["stage"], "presentation")
-        self.advance(12000)
-        questions = projection.next()[1]
+        self.advance(10100)
+        waiting = projection.next()[1]
+        self.assertEqual((waiting["stage"], waiting["phase"], waiting["remainingMs"]), ("presentation", "finished", 0))
+        self.assertTrue(waiting["waitingQuestions"])
+        self.assertGreaterEqual(waiting["questionsAt"], running["deadline"] + 3000)
+        self.assertFalse(projection.next()[1]["transition"])
+        kind, audio = projection.next()
+        self.assertEqual((kind, audio["sound"]), ("audio", "beep"))
+        self.advance(1500)
+        self.assertEqual(self.view()["stage"], "presentation")
+        self.advance(1800)
+        kind, questions = projection.next()
+        self.assertEqual(kind, "state")
         self.assertEqual((questions["current"], questions["stage"], questions["phase"]),
                          (running["current"], "questions", "running"))
-        self.assertEqual(questions["deadline"], running["deadline"] + 20000)
-        self.assertTrue(projection.next()[1]["transition"])
+        self.assertEqual(questions["deadline"], waiting["questionsAt"] + 20000)
+        self.assertIsNone(questions["questionsAt"])
         self.advance(20000)
-        finished = projection.next()[1]
+        kind, finished = projection.next()
+        self.assertEqual(kind, "state")
         self.assertEqual((finished["stage"], finished["phase"], finished["remainingMs"]), ("questions", "finished", 0))
         self.assertFalse(projection.next()[1]["transition"])
         next_group = self.command(teacher, "next")[1]
         self.assertEqual((next_group["stage"], next_group["phase"], next_group["remainingMs"]), ("presentation", "ready", 10000))
         self.assertNotEqual(next_group["current"], running["current"])
+
+    def test_auto_questions_has_no_delay_at_zero_volume(self):
+        self.use_clock()
+        teacher = self.pair()
+        self.command(teacher, "settings", settings=dict(self.view()["settings"],
+            duration=10, questionsDuration=20, twoStage=True, autoAdvance=True, volume=0))
+        running = self.command(teacher, "start")[1]
+        self.advance(10200)
+        questions = self.view()
+        self.assertEqual((questions["stage"], questions["phase"], questions["questionsAt"]), ("questions", "running", None))
+        self.assertEqual(questions["deadline"], running["deadline"] + 20000)
 
     def test_two_stages_manual_wait_and_deferred_settings(self):
         self.use_clock()

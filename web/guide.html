@@ -52,6 +52,7 @@
         <p>If the browser requires a click before playing audio, clicking <strong>Fullscreen</strong> also enables it. If needed, use <strong>Enable sound</strong> on the projection. Use <strong>Preview on projection</strong> from the console to check the venue speakers.</p>
         <p>From 10 seconds down to 2 seconds, the background and digits shift colors about once per second. The light theme pulses toward amber and the dark theme toward purple. Light and dark alternate during the last 2 seconds. With reduced motion enabled, the display uses a gradual background tint.</p>
         <p>The console timer previews the projection’s countdown colors, background, current group, and next two groups. Use the theme button below the preview to match the projection if it runs in a different browser.</p>
+        <p>For the Windows desktop app, expand <strong>Desktop overlay</strong> in the paired console to apply position, size, overall opacity, background opacity, and layout. Positions use the display selected in the app.</p>
       </section>
       <section class="panel">
         <h2>Use the Windows LAN backup</h2>
@@ -68,7 +69,7 @@
       <section class="panel guide-public">
         <h2>Presentation and Q&amp;A</h2>
         <p>In the console, enable <strong>Two stages per group</strong>, set the Presentation and Q&amp;A times, and save. Use <strong>Open projection</strong> to show the current group, stage, and queue. This works from the paired online or LAN console and from the local offline console.</p>
-        <p>Turn on <strong>Automatically start Q&amp;A</strong> for continuous timing. With it off, Presentation holds at <code>00:00</code> until you select <strong>Start Q&amp;A</strong> on the console. After Q&amp;A, <strong>Next group</strong> prepares that group’s Presentation. <strong>Reset</strong> returns to the current group’s Presentation. Changes to stage timing made mid-group apply on reset or the next group.</p>
+        <p>With <strong>Automatically start Q&amp;A</strong> on, Presentation holds at <code>00:00</code> while the selected finish sound plays, then Q&amp;A starts. With sound muted or volume at zero, Q&amp;A starts immediately. With auto-start off, select <strong>Start Q&amp;A</strong> on the console. After Q&amp;A, <strong>Next group</strong> prepares that group’s Presentation. <strong>Reset</strong> returns to the current group’s Presentation. Changes to stage timing made mid-group apply on reset or the next group.</p>
         <p>The same projection page follows the stage mode saved in the console. In <strong>Standalone timer</strong> mode, choose <strong>Use two stages</strong> or <strong>Use one stage</strong> on the projection page itself. Press <kbd>Esc</kbd> to reveal the controls from fullscreen.</p>
       </section>
       <section class="panel guide-public">
@@ -216,6 +217,7 @@ python server.py --help</code></pre>
         <p>如果浏览器要求先点击页面，点<strong>全屏</strong>时也会启用声音。需要时也可以点投影页的<strong>启用声音</strong>。可在控制台点<strong>在投影端试听</strong>检查现场音响。</p>
         <p>从剩余 10 秒到 2 秒，背景和倒计时数字约每秒渐变一次。浅色主题渐变至琥珀色调，深色主题渐变至紫色调。最后 2 秒交替明暗。系统开启减少动态效果时，只渐变背景色。</p>
         <p>控制台计时区会预览投影的倒计时颜色、背景、当前组及后续两组。如果投影开在另一浏览器，可用预览下方的主题按钮与投影配色对齐。</p>
+        <p>使用 Windows App 时，在已配对的控制台展开<strong>桌面悬浮窗</strong>，即可应用位置、尺寸、整体及背景不透明度和布局。位置以 App 中选定的屏幕为准。</p>
       </section>
       <section class="panel">
         <h2>使用 Windows 局域网备用</h2>
@@ -232,7 +234,7 @@ python server.py --help</code></pre>
       <section class="panel guide-public">
         <h2>Presentation 与 Q&amp;A 双阶段计时</h2>
         <p>在控制台勾选<strong>每组两阶段</strong>，分别设置 Presentation 和 Q&amp;A 时长，点保存后<strong>打开投影页</strong>。投影显示当前组、阶段和待场队列。在线、局域网和本机离线控制台都支持。</p>
-        <p>勾选<strong>自动开始 Q&amp;A</strong>可连续计时。关闭时，Presentation 停在 <code>00:00</code>，在控制台点<strong>开始 Q&amp;A</strong>继续。问答归零后，点<strong>下一组</strong>准备下一组的 Presentation。<strong>重置</strong>会回到当前组的 Presentation。计时中修改的阶段时长在重置或切组后生效。</p>
+        <p>勾选<strong>自动开始 Q&amp;A</strong>后，Presentation 停在 <code>00:00</code> 播放所选到时铃声，播完自动开始 Q&amp;A。静音或音量为零时立即开始 Q&amp;A。关闭自动开始时，在控制台点<strong>开始 Q&amp;A</strong>继续。问答归零后，点<strong>下一组</strong>准备下一组的 Presentation。<strong>重置</strong>会回到当前组的 Presentation。计时中修改的阶段时长在重置或切组后生效。</p>
         <p>跟随控制台时，同一个投影页按控制台设置显示单阶段或双阶段。在投影页进入<strong>独立计时</strong>后，可用按钮切换阶段模式。全屏时按 <kbd>Esc</kbd> 恢复控件。</p>
       </section>
       <section class="panel guide-public">

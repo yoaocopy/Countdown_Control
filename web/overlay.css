@@ -1,0 +1,150 @@
+html.desktop-shell { background: transparent; }
+.desktop-shell .projection.display-page.desktop-overlay {
+  height: 100dvh; min-height: 0; overflow: hidden; isolation: isolate;
+  color: var(--projection-number); background: transparent;
+}
+.desktop-view {
+  position: absolute; inset: 0; display: flex; flex-direction: column; isolation: isolate; container-type: size;
+  opacity: var(--desktop-window-opacity, 1);
+  --edge-band: clamp(9px, 5cqmin, 28px);
+}
+.desktop-view::before, .desktop-overlay[data-layout^="compact"] .stage::before {
+  content: ""; z-index: -1;
+  border: 1px solid var(--projection-rule); border-radius: 14px;
+  background: var(--projection-background); opacity: var(--desktop-opacity, .88);
+}
+.desktop-view::before { position: absolute; inset: 0; }
+.desktop-overlay[data-layout^="compact"] .desktop-view::before { content: none; }
+.desktop-overlay[data-layout^="compact"] .stage::before {
+  position: absolute; grid-area: 1 / 1 / -1 / -1;
+  inset: calc(0px - var(--card-padding)); border-radius: 10px;
+}
+.desktop-overlay[data-edge="fade"] :is(.desktop-view, .stage)::before {
+  border: 0; border-radius: 0;
+  /* A solid center, four eased side gradients and four matching round corners. */
+  --core-width: calc(100% - 2 * var(--edge-band));
+  --core-height: calc(100% - 2 * var(--edge-band));
+  --edge-stops: #000 0%, #000f 12%, #000c 37%, #0004 74%, #0000 100%;
+  --corner-stops: #000 0, #000f calc(var(--edge-band) * .12), #000c calc(var(--edge-band) * .37),
+    #0004 calc(var(--edge-band) * .74), #0000 var(--edge-band);
+  mask:
+    linear-gradient(#000 0 0) center / var(--core-width) var(--core-height) no-repeat,
+    linear-gradient(to top, var(--edge-stops)) top center / var(--core-width) var(--edge-band) no-repeat,
+    linear-gradient(to bottom, var(--edge-stops)) bottom center / var(--core-width) var(--edge-band) no-repeat,
+    linear-gradient(to left, var(--edge-stops)) center left / var(--edge-band) var(--core-height) no-repeat,
+    linear-gradient(to right, var(--edge-stops)) center right / var(--edge-band) var(--core-height) no-repeat,
+    radial-gradient(circle at bottom right, var(--corner-stops)) top left / var(--edge-band) var(--edge-band) no-repeat,
+    radial-gradient(circle at bottom left, var(--corner-stops)) top right / var(--edge-band) var(--edge-band) no-repeat,
+    radial-gradient(circle at top right, var(--corner-stops)) bottom left / var(--edge-band) var(--edge-band) no-repeat,
+    radial-gradient(circle at top left, var(--corner-stops)) bottom right / var(--edge-band) var(--edge-band) no-repeat;
+}
+.desktop-overlay[data-mouse-responsive] .desktop-view { cursor: grab; user-select: none; }
+.desktop-overlay[data-mouse-responsive] .desktop-view[data-dragging] { cursor: grabbing; }
+.desktop-mouse-hint {
+  position: absolute; inset: 4px auto auto 7px; z-index: 1; padding: .12rem .38rem;
+  font-size: .64rem; font-weight: 650; border-radius: .4rem;
+  color: var(--projection-number); background: var(--projection-controls);
+}
+.desktop-overlay > .display-controls { display: none; }
+.display-page.desktop-overlay .projection-layout {
+  width: 100%; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0;
+}
+.projection.display-page.desktop-overlay .stage {
+  min-height: 0; grid-template-areas: "current" "clock" "upcoming";
+  grid-template-rows: auto minmax(0, 1fr) auto; align-items: center;
+  padding: clamp(7px, 4cqh, 35px) clamp(10px, 4cqw, 40px); gap: clamp(2px, 1.35cqh, 14px);
+}
+.projection.display-page.desktop-overlay[data-edge="fade"]:not([data-no-backdrop]) .stage {
+  padding: max(4cqh, var(--edge-band)) max(4cqw, var(--edge-band));
+}
+.projection.desktop-overlay .stage :is(.stage-current, .upcoming) { display: revert; }
+.desktop-overlay .overlay-queue { display: contents; }
+.desktop-overlay .stage-current { grid-area: current; }
+.projection.desktop-overlay .stage .upcoming { display: grid; grid-area: upcoming; }
+.desktop-overlay .stage-clock { grid-area: clock; gap: clamp(2px, 1cqh, 12px); min-height: 0; }
+.display-page.desktop-overlay .stage .timer { font-size: clamp(38px, min(27cqw, 34cqh), 290px); }
+.display-page.desktop-overlay.two-stage .stage .timer { font-size: clamp(38px, min(27cqw, 27cqh), 270px); }
+.desktop-overlay .stage :is(h1, h2) { font-size: clamp(5px, 2.375cqh, 12px); }
+.desktop-overlay .stage-name { font-size: clamp(14px, min(5.8cqw, 7.5cqh), 54px); }
+.desktop-overlay .upcoming p { font-size: clamp(12px, min(4.3cqw, 6.5cqh), 42px); }
+.desktop-overlay .upcoming div { padding-top: clamp(2px, 1.2cqh, 12px); }
+.desktop-overlay .stage-phase { font-size: clamp(11px, 4.6cqh, 28px); }
+.desktop-overlay.two-stage .overlay-active-stage { font-size: clamp(11px, 4.75cqh, 28px); }
+.desktop-overlay .overlay-name { display: block; min-width: 0; overflow: hidden; white-space: nowrap; }
+.desktop-overlay .overlay-name span { white-space: nowrap; }
+.desktop-overlay .next-stage { display: none; }
+.desktop-overlay .display-connection {
+  inset: 4px 10px auto auto; font-size: clamp(9px, 4cqh, 15px); max-width: 40%;
+  padding: .1em .4em; border-radius: .4em; background: var(--projection-notice);
+}
+.desktop-overlay[data-no-backdrop] :is(.desktop-view, .stage)::before { opacity: 0; }
+.desktop-overlay[data-no-backdrop] .stage {
+  --text-shadow: #050611;
+  text-shadow: 0 1px 3px var(--text-shadow), 0 0 6px var(--text-shadow);
+}
+.desktop-overlay[data-no-backdrop][data-theme="light"] .stage,
+.desktop-overlay[data-no-backdrop][data-final-palette="light"] .stage { --text-shadow: #fff; }
+.desktop-overlay[data-no-backdrop][data-final-palette="dark"] .stage { --text-shadow: #050611; }
+.desktop-overlay[data-no-backdrop] .upcoming div,
+.desktop-overlay[data-no-backdrop] .stage .overlay-active-stage { border-color: transparent; }
+.desktop-overlay[data-no-backdrop] .display-connection { background: transparent; }
+
+.projection.display-page.desktop-overlay[data-layout^="compact"] .stage {
+  --card-padding: clamp(6px, 2cqmin, 14px);
+  --label-width: 2.65em;
+  position: relative; isolation: isolate; align-content: center; justify-content: center;
+  row-gap: .2rem; column-gap: clamp(7px, 2.1cqmin, 18px);
+  padding: calc(var(--card-padding) + 2px);
+}
+.projection.display-page.desktop-overlay[data-layout^="compact"][data-edge="fade"]:not([data-no-backdrop]) .stage {
+  --card-padding: calc(var(--edge-band) + 5px);
+  padding: calc(var(--card-padding) + 2px);
+}
+.desktop-overlay[data-layout^="compact"] .stage:lang(zh) { --label-width: 1.9em; }
+.projection.display-page.desktop-overlay[data-layout="compact"] .stage {
+  --clock-size: clamp(30px, min(15.5cqw, 38cqh), 235px);
+  grid-template: "clock queue" auto / minmax(0, min(47%, calc(var(--clock-size) * 2.55))) minmax(0, 39%);
+}
+.projection.display-page.desktop-overlay[data-layout="compact-top"] .stage {
+  --queue-column-gap: clamp(10px, 3.5cqmin, 26px);
+  grid-template-areas: "current upcoming" "clock clock";
+  grid-template-rows: auto auto;
+  grid-template-columns: repeat(2, minmax(0, min(46%, 30cqw)));
+  gap: clamp(4px, 2.1cqh, 15px) var(--queue-column-gap);
+}
+.desktop-overlay[data-layout^="compact"] .stage-clock { max-width: 100%; }
+.desktop-overlay[data-layout="compact"] .stage-clock { justify-self: end; }
+.desktop-overlay[data-layout="compact"] .overlay-queue {
+  --queue-gap: clamp(2px, 1.05cqh, 5px);
+  grid-area: queue; display: grid; gap: var(--queue-gap); min-width: 0;
+}
+.projection.desktop-overlay[data-layout^="compact"] .stage-current {
+  display: grid; min-width: 0; text-align: left;
+}
+.desktop-overlay[data-layout^="compact"] .stage .upcoming {
+  grid-template-columns: minmax(0, 1fr); gap: var(--queue-gap, .22rem); min-width: 0; text-align: left;
+}
+.desktop-overlay[data-layout="compact"] .stage .overlay-queue > :is(.stage-current, .upcoming) {
+  grid-area: auto;
+}
+.desktop-overlay[data-layout^="compact"] :is(.stage-current, .upcoming div) {
+  font-size: clamp(9px, min(3.1cqw, 4.5cqh), 22px); line-height: 1.18;
+}
+.desktop-overlay[data-layout^="compact"] .upcoming div,
+.desktop-overlay[data-layout="compact"] .stage-current {
+  display: grid; grid-template-columns: var(--label-width) minmax(0, 1fr); gap: .22em; align-items: baseline;
+  min-width: 0; padding: 0; border: 0;
+}
+.desktop-overlay[data-layout="compact-top"] .stage-current {
+  gap: .18em;
+  margin-inline-start: max(0px, calc(100% + (var(--queue-column-gap) - var(--overlay-timer-width, 100%)) / 2));
+}
+.desktop-overlay[data-layout^="compact"] :is(.stage-name, .upcoming p) {
+  display: block; min-width: 0; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.desktop-overlay[data-layout^="compact"] .stage-name { font-size: clamp(13px, min(4.35cqw, 7cqh), 49px); }
+.desktop-overlay[data-layout^="compact"] .upcoming p { font-size: clamp(11px, min(3.45cqw, 5.6cqh), 38px); opacity: .58; }
+.desktop-overlay[data-layout^="compact"] .stage :is(h1, h2) { font-size: .55em; line-height: 1.18; white-space: nowrap; }
+.display-page.desktop-overlay[data-layout="compact"] .stage .timer { font-size: var(--clock-size); }
+.display-page.desktop-overlay[data-layout="compact-top"] .stage .timer { font-size: clamp(32px, min(24cqw, 34cqh), 270px); }
+.display-page.desktop-overlay[data-layout="compact-top"].two-stage .stage .timer { font-size: clamp(30px, min(24cqw, 29cqh), 235px); }

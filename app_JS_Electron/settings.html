@@ -1,0 +1,48 @@
+<section id="desktop-settings" aria-label="Overlay settings" hidden>
+  <header class="desktop-heading">
+    <h1 data-desktop-label="adjust">Adjust overlay</h1>
+    <button id="desktop-lock" type="button" data-desktop-label="lock">Lock</button>
+  </header>
+  <div class="desktop-settings-body">
+    <form id="desktop-source">
+      <label><span data-desktop-label="source">Timer source</span>
+        <select id="desktop-mode">
+          <option value="standalone" data-t="standalone">Standalone timer</option>
+          <option value="follow" data-t="followProjection">Follow console</option>
+        </select>
+      </label>
+      <label><span data-desktop-label="address">Server base address</span>
+        <input id="desktop-server" type="url" maxlength="2048" inputmode="url" placeholder="https://example.edu/timer/" autocomplete="off" spellcheck="false">
+      </label>
+      <button type="submit" data-desktop-label="applySource">Apply source</button>
+    </form>
+    <form id="desktop-size">
+      <label><span data-desktop-label="screen">Screen</span><select id="desktop-monitor"></select></label>
+      <div class="desktop-dimensions">
+        <label><span data-desktop-label="width">Width</span><input id="desktop-width" type="number" min="330" step="1" required></label>
+        <label><span data-desktop-label="height">Height</span><input id="desktop-height" type="number" min="200" step="1" required></label>
+        <button type="submit" data-desktop-label="resize">Resize</button>
+      </div>
+      <label><span data-t="overlayLayout">Layout</span><select id="desktop-layout">
+        <option value="card" data-t="overlayCard">Standard card</option>
+        <option value="compact" data-t="overlayCompact">Compact · side queue</option>
+        <option value="compact-top" data-t="overlayCompactTop">Compact · queue above</option>
+      </select></label>
+      <label class="desktop-check"><input id="desktop-text-only" type="checkbox"><span data-t="overlayText">Text only</span></label>
+      <label id="desktop-edge-setting"><span data-t="overlayEdge">Background edge</span><select id="desktop-edge">
+        <option value="solid" data-t="overlayEdgeSolid">Defined border</option>
+        <option value="fade" data-t="overlayEdgeFade">Soft fade</option>
+      </select></label>
+      <label><span><span data-t="overlayWindowOpacity">Overall opacity</span> <output id="desktop-window-opacity-value" for="desktop-window-opacity"></output></span>
+        <input id="desktop-window-opacity" type="range" min="10" max="100" step="1">
+      </label>
+      <label id="desktop-background-setting"><span><span data-t="overlayBackgroundOpacity">Background opacity</span> <output id="desktop-opacity-value" for="desktop-opacity"></output></span>
+        <input id="desktop-opacity" type="range" min="0" max="100" step="1">
+      </label>
+      <label class="desktop-check"><input id="desktop-muted" type="checkbox"><span data-desktop-label="mute">Mute this overlay</span></label>
+    </form>
+    <div class="actions" id="desktop-quick"></div>
+    <p id="desktop-error" role="status" hidden></p>
+    <div id="desktop-local"></div>
+  </div>
+</section>

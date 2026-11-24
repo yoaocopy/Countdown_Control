@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Countdown Timer</title>
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./overlay.css">
   <script defer src="./common.js"></script>
   <script defer src="./offline.js"></script>
+  <script defer src="./overlay-names.js"></script>
   <script defer src="./console.js"></script>
 </head>
 <body class="console">
@@ -67,6 +69,80 @@
             <button id="preview-theme" type="button" data-t="lightTheme">Light theme</button>
           </div>
         </section>
+        <details class="panel overlay-panel">
+          <summary data-t="overlayControls">Desktop overlay</summary>
+          <p id="overlay-help" data-t="overlayHelp">Applies to desktop apps following this server. Positions are relative to the screen selected on each app.</p>
+          <p id="overlay-offline" data-t="overlayOffline" hidden>Switch the console online to control the desktop overlay.</p>
+          <form id="overlay-form">
+            <fieldset id="overlay-fields" disabled>
+              <div class="actions">
+                <button type="button" id="overlay-read" data-t="overlayRead">Read current app settings</button>
+                <select id="overlay-devices" hidden aria-label="Desktop app"></select>
+                <span id="overlay-read-status" aria-live="polite"></span>
+              </div>
+              <div class="overlay-pair">
+                <label><span data-t="overlayLayout">Layout</span><select id="overlay-layout">
+                  <option value="card" data-t="overlayCard">Standard card</option>
+                  <option value="compact" data-t="overlayCompact">Compact · side queue</option>
+                  <option value="compact-top" data-t="overlayCompactTop">Compact · queue above</option>
+                </select></label>
+                <label><span data-t="overlayPosition">Position</span><select id="overlay-position">
+                  <option value="keep" data-t="overlayKeep">Keep current location</option>
+                  <option value="left-top" data-t="overlayLeftTop">Top left</option>
+                  <option value="center-top" data-t="overlayCenterTop">Top center</option>
+                  <option value="right-top" data-t="overlayRightTop">Top right</option>
+                  <option value="left-middle" data-t="overlayLeftMiddle">Middle left</option>
+                  <option value="center-middle" data-t="overlayCenterMiddle">Center</option>
+                  <option value="right-middle" data-t="overlayRightMiddle">Middle right</option>
+                  <option value="left-bottom" data-t="overlayLeftBottom">Bottom left</option>
+                  <option value="center-bottom" data-t="overlayCenterBottom">Bottom center</option>
+                  <option value="right-bottom" data-t="overlayRightBottom">Bottom right</option>
+                  <option value="custom" data-t="overlayCustom">Custom offset</option>
+                </select></label>
+              </div>
+              <label class="overlay-check"><input id="overlay-text-only" type="checkbox"><span data-t="overlayText">Text only</span></label>
+              <label id="overlay-edge-setting"><span data-t="overlayEdge">Background edge</span><select id="overlay-edge">
+                <option value="solid" data-t="overlayEdgeSolid">Defined border</option>
+                <option value="fade" data-t="overlayEdgeFade">Soft fade</option>
+              </select></label>
+              <div id="overlay-offsets" class="overlay-pair" hidden>
+                <label><span data-t="overlayX">From left (px)</span><input id="overlay-x" type="number" min="0" max="8192" required value="0"></label>
+                <label><span data-t="overlayY">From top (px)</span><input id="overlay-y" type="number" min="0" max="8192" required value="0"></label>
+              </div>
+              <div class="overlay-pair">
+                <label><span data-t="overlayWidth">Width (px)</span><input id="overlay-width" type="number" min="330" max="8192" required value="500"></label>
+                <label><span data-t="overlayHeight">Height (px)</span><input id="overlay-height" type="number" min="200" max="8192" required value="295"></label>
+              </div>
+              <label><span><span data-t="overlayWindowOpacity">Overall opacity</span> <output id="overlay-window-value" for="overlay-window-opacity">100%</output></span>
+                <input id="overlay-window-opacity" type="range" min="10" max="100" value="100">
+              </label>
+              <label id="overlay-background-setting"><span><span data-t="overlayBackgroundOpacity">Background opacity</span> <output id="overlay-background-value" for="overlay-background-opacity">88%</output></span>
+                <input id="overlay-background-opacity" type="range" min="0" max="100" value="88">
+              </label>
+              <div class="overlay-demo">
+                <h3 data-t="overlayPreview">Preview before applying</h3>
+                <div id="overlay-demo-screen">
+                  <div id="overlay-demo-window" class="projection display-page desktop-overlay">
+                    <div class="desktop-view">
+                      <div class="projection-layout"><div class="stage">
+                        <div class="stage-clock"><p class="overlay-active-stage" hidden></p><div class="timer">--:--</div><p class="stage-phase"></p></div>
+                        <div class="overlay-queue">
+                          <div class="stage-current"><h1 data-t="current">Current</h1><p class="stage-name">N/A</p></div>
+                          <div class="upcoming">
+                            <div><h2 data-t="nextUp">Next up</h2><p>—</p></div>
+                            <div><h2 data-t="onDeck">After next</h2><p>—</p></div>
+                          </div>
+                        </div>
+                      </div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="actions"><button type="submit" class="primary" data-t="overlayApply">Apply to desktop overlay</button>
+                <span id="overlay-saved" aria-live="polite"></span></div>
+            </fieldset>
+          </form>
+        </details>
         <section class="panel">
           <h2 data-t="projectionAudio">Projection audio</h2>
           <p data-t="audioHelp">The projection plays the finish sound. Select Mute or set volume to 0 for a silent countdown.</p>

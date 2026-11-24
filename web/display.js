@@ -1,15 +1,18 @@
 (() => {
-  const { $, t, setupLanguage, paintCountdown, remainingTime, currentName, stageName, phaseLabel, reducedMotion,
+  const { $, t, setupLanguage, paintCountdown, remainingTime, currentName, stageName, phaseLabel, reducedMotion, settleClock,
     showNotice, isFile, storage, temporary, setupTemporaryClear, createTimerAudio } = CountdownUI;
 
   const params = new URLSearchParams(location.search);
+  const desktopMode = document.body.dataset.desktopMode;
+  const fitNames = desktopMode && OverlayNames(document.querySelector('.stage'));
   const directFile = isFile && !window.opener;
   const forcedFollow = !!window.opener || params.has("follow") || params.get("mode") === "offline" ||
     new URLSearchParams(location.hash.slice(1)).has("speaker");
   const modeKey = directFile ? "display-file-mode" : "display-mode";
   const legacyPage = /\/two-stage(?:\.html)?$/.test(location.pathname);
   const cachedMode = !forcedFollow && (temporary(modeKey) || (legacyPage && temporary("two-stage-mode")));
-  let standalone = !forcedFollow && (cachedMode ? cachedMode === "standalone" : directFile);
+  let standalone = desktopMode ? desktopMode === "standalone" :
+    !forcedFollow && (cachedMode ? cachedMode === "standalone" : directFile);
   let light = storage("localStorage", "countdown-display-theme") === "light";
   const settingsKey = "countdown-two-stage-settings";
   const validTime = seconds => Number.isInteger(seconds) && seconds >= 1 && seconds <= 5999;
@@ -63,7 +66,8 @@
     if (saved.phase === "paused" && Number.isFinite(saved.remainingMs) && saved.remainingMs > 0 && saved.remainingMs <= 5999000) {
       return { stage, phase: "paused", deadline: null, remainingMs: saved.remainingMs };
     }
-    if (saved.phase === "finished") return { stage, phase: "finished", deadline: null, remainingMs: 0 };
+    if (saved.phase === "finished") return { stage, phase: "finished", deadline: null, remainingMs: 0,
+      questionsAt: stage === "presentation" && settings.twoStage && settings.auto && Number.isFinite(saved.questionsAt) ? saved.questionsAt : null };
     return ready();
   }
 
@@ -104,9 +108,14 @@
     $("standalone-set").textContent = t(settings.twoStage ? "saveTimes" : "setTime");
 
     const group = state?.groups.find(item => item.id === state.current);
-    currentName($("current-name"), group);
-    $("first").textContent = state?.upcoming[0]?.name || "—";
-    $("second").textContent = state?.upcoming[1]?.name || "—";
+    if (fitNames) {
+      $("current-name").toggleAttribute("data-placeholder", !group);
+      fitNames([group?.name || "N/A", state?.upcoming[0]?.name || "—", state?.upcoming[1]?.name || "—"]);
+    } else {
+      currentName($("current-name"), group);
+      $("first").textContent = state?.upcoming[0]?.name || "—";
+      $("second").textContent = state?.upcoming[1]?.name || "—";
+    }
     const label = twoStages ? stageName(standalone ? timer.stage : state?.stage) : "";
     $("stage-identification").hidden = !twoStages;
     if ($("active-stage").textContent !== label) $("active-stage").textContent = label;
@@ -117,7 +126,7 @@
     const paused = timer.phase === "paused";
     $("stage-fields").disabled = running || (settings.twoStage && paused);
     $("standalone-start").textContent = t(waiting() ? "startQuestions" : paused ? "resume" : "start");
-    $("standalone-start").hidden = running;
+    $("standalone-start").hidden = running || timer.questionsAt != null;
     $("standalone-start").disabled = timer.phase === "finished" && !waiting();
     $("standalone-pause").hidden = !running;
     $("next-stage").hidden = !standalone || !twoStages || timer.stage === "questions";
@@ -130,28 +139,17 @@
     timer = { stage: "questions", phase: "running", deadline: at + settings.questions * 1000,
       remainingMs: settings.questions * 1000 };
   }
-  function finish() {
-    timer.phase = "finished";
-    timer.deadline = null;
-    timer.remainingMs = 0;
-  }
   function settle(audible) {
     const timestamp = now();
-    if (timer.deadline === null || timestamp < timer.deadline) return;
-    let endedAt = timer.deadline;
-    finish();
-    if (waiting() && settings.auto) {
-      startQuestions(endedAt);
-      if (timestamp >= timer.deadline) {
-        endedAt = timer.deadline;
-        finish();
-      }
-    }
+    const result = settleClock(timer, timestamp, { questionsMs: settings.questions * 1000,
+      autoQuestions: settings.twoStage && settings.auto, sound: settings.sound, volume: settings.volume }, audible);
+    if (!result) return;
+    timer = result.timer;
     remember();
     paint();
-    if (audible && timestamp - endedAt < 2000) {
+    if (audible && result.finishedAt !== null && timestamp - result.finishedAt < 2000) {
       animate();
-      audio.play(timer.phase === "running" && settings.sound !== "mute" ? "double" : settings.sound, settings.volume);
+      audio.play(settings.sound, settings.volume);
     }
   }
   function animate() {
@@ -181,8 +179,15 @@
     remember();
   }
 
-  const follower = createProjectionFollower({ audio, isActive: () => !standalone,
-    update() { paint(); tick(); }, animate });
+  const follower = createProjectionFollower({ audio, enabled: desktopMode !== "standalone", isActive: () => !standalone,
+    update() {
+      paint();
+      tick();
+      if (desktopMode === "follow") {
+        const { instance, overlay } = follower.state ?? {};
+        window.dispatchEvent(new CustomEvent("countdown-overlay-state", { detail: { instance, overlay, connected: follower.connected, client: follower.client } }));
+      }
+    }, animate });
 
   setFields();
   $("auto-advance").checked = settings.auto;
@@ -202,10 +207,15 @@
   $("auto-advance").onchange = event => {
     settle(true);
     settings.auto = event.target.checked;
+    if (!settings.auto && timer.questionsAt != null) {
+      timer.questionsAt = null;
+      remember();
+      paint();
+    }
     save();
   };
   $("standalone-start").onclick = () => {
-    if (!standalone || (!waiting() && !["ready", "paused"].includes(timer.phase))) return;
+    if (!standalone || timer.questionsAt != null || (!waiting() && !["ready", "paused"].includes(timer.phase))) return;
     audio.unlock().catch(() => {});
     if (waiting()) startQuestions(now());
     else {
@@ -247,6 +257,7 @@
     tick();
   };
   $("display-mode").onclick = () => {
+    if (desktopMode) return;
     audio.stop();
     if (standalone) { settle(false); pause(); }
     standalone = !standalone;
@@ -280,14 +291,14 @@
 
   setupLanguage(() => { paint(); notice($("display-notice").dataset.message); });
   setupTemporaryClear(() => {
-    standalone = directFile && !forcedFollow;
+    standalone = desktopMode ? desktopMode === "standalone" : directFile && !forcedFollow;
     reset();
     localTouched = false;
     notice("temporaryCleared");
   });
   window.addEventListener("pagehide", () => {
     if (localTouched) remember();
-    if (!forcedFollow && standalone !== directFile) temporary(modeKey, standalone ? "standalone" : "follow");
+    if (!desktopMode && !forcedFollow && standalone !== directFile) temporary(modeKey, standalone ? "standalone" : "follow");
   });
   if (standalone) settle(false);
   tick();

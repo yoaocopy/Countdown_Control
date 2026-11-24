@@ -11,6 +11,11 @@ let pairedInstance;
 let pairingEpoch = 0;
 let queueSignature;
 let settingsSignature;
+let overlaySignature;
+let overlaySaved = false;
+let overlayReadStatus;
+let overlayClients = [];
+let overlayScreen;
 let dragging;
 let candidate;
 let batch;
@@ -29,6 +34,15 @@ const localAudio = createTimerAudio();
 const queueState = () => JSON.stringify([offline ? "local" : state?.instance, state?.groups, state?.current]);
 const batchChanged = () => batch && (batch.removed.size > 0 || batch.order.some((id, index) => id !== batch.groups[index].id));
 const draftKey = () => offline ? "console-offline" : "console-online";
+const overlayInputs = {
+  layout: "overlay-layout", textOnly: "overlay-text-only", edge: "overlay-edge", position: "overlay-position", width: "overlay-width", height: "overlay-height",
+  offsetX: "overlay-x", offsetY: "overlay-y", windowOpacity: "overlay-window-opacity", backgroundOpacity: "overlay-background-opacity",
+};
+const overlayDefaults = { layout: "card", textOnly: false, edge: "solid", position: "keep", width: 500, height: 295, offsetX: 0, offsetY: 0, windowOpacity: 100, backgroundOpacity: 88 };
+const overlayDemo = $("overlay-demo-window");
+const overlayDemoScreen = $("overlay-demo-screen");
+const overlayDemoClock = overlayDemo.querySelector(".stage-clock");
+const fitOverlayDemoNames = OverlayNames(overlayDemo.querySelector(".stage"));
 
 function rememberConsole(refresh = false) {
   if (!state) return;
@@ -248,7 +262,7 @@ function render() {
     const { command } = control.dataset;
     const phase = state?.phase;
     const appropriate = ({ start: !state?.waitingQuestions && (!phase || phase === "ready" || phase === "finished"),
-      questions: !!state?.waitingQuestions, pause: phase === "running",
+      questions: !!state?.waitingQuestions && state.questionsAt == null, pause: phase === "running",
       resume: phase === "paused", reset: true, next: true })[command];
     control.hidden = !appropriate;
     control.disabled = !canWrite() || (command === "start" && phase !== "ready") ||
@@ -256,8 +270,137 @@ function render() {
   });
   $("settings-fields").disabled = !canWrite();
   renderStageSettings();
+  renderOverlay();
   rememberConsole();
 }
+
+function paintOverlayForm() {
+  const custom = $("overlay-position").value === "custom";
+  $("overlay-offsets").hidden = !custom;
+  $("overlay-x").disabled = !custom;
+  $("overlay-y").disabled = !custom;
+  $("overlay-background-setting").hidden = $("overlay-text-only").checked;
+  $("overlay-edge-setting").hidden = $("overlay-text-only").checked;
+  $("overlay-window-value").value = $("overlay-window-opacity").value + "%";
+  $("overlay-background-value").value = $("overlay-background-opacity").value + "%";
+  $("overlay-saved").textContent = overlaySaved ? t("overlaySaved") : "";
+  $("overlay-read-status").textContent = overlayReadStatus ? t(overlayReadStatus) : "";
+  $("overlay-devices").setAttribute("aria-label", t("overlayDevice"));
+  for (const option of $("overlay-devices").options) option.textContent = `${t("overlayDevice")} ${option.value}`;
+  paintOverlayDemo();
+}
+
+function writeOverlayForm(saved) {
+  const settings = { ...overlayDefaults, ...saved };
+  if (settings.layout === "text") { settings.layout = "card"; settings.textOnly = true; }
+  for (const [name, id] of Object.entries(overlayInputs)) {
+    const control = $(id);
+    if (control.type === "checkbox") control.checked = settings[name];
+    else control.value = settings[name];
+  }
+}
+
+function readOverlayForm() {
+  return Object.fromEntries(Object.entries(overlayInputs).map(([key, id]) => {
+    const control = $(id);
+    let value = control.valueAsNumber;
+    if (control.disabled) value = overlayDefaults[key];
+    else if (control.type === "checkbox") value = control.checked;
+    else if (control.tagName === "SELECT") value = control.value;
+    return [key, value];
+  }));
+}
+
+function paintOverlayDemo() {
+  if (!overlayDemoScreen.clientWidth) return;
+  const form = readOverlayForm();
+  const display = overlayScreen ?? { width: 1000, height: 625 };
+  const width = Math.max(1, Math.min(display.width, form.width || overlayDefaults.width));
+  const height = Math.max(1, Math.min(display.height, form.height || overlayDefaults.height));
+  const availableX = display.width - width;
+  const availableY = display.height - height;
+  const insetX = Math.min(20, availableX / 2);
+  const insetY = Math.min(20, availableY / 2);
+  const [horizontal, vertical] = (form.position === "keep" ? "right-top" : form.position).split("-");
+  const x = form.position === "custom" ? Math.min(availableX, Math.max(0, form.offsetX || 0)) :
+    { left: insetX, center: availableX / 2, right: availableX - insetX }[horizontal];
+  const y = form.position === "custom" ? Math.min(availableY, Math.max(0, form.offsetY || 0)) :
+    { top: insetY, middle: availableY / 2, bottom: availableY - insetY }[vertical];
+  const scale = Math.min(overlayDemoScreen.clientWidth / display.width, overlayDemoScreen.clientHeight / display.height);
+  Object.assign(overlayDemo.style, { width: `${width}px`, height: `${height}px`,
+    left: `${(overlayDemoScreen.clientWidth - display.width * scale) / 2 + x * scale}px`,
+    top: `${(overlayDemoScreen.clientHeight - display.height * scale) / 2 + y * scale}px`, transform: `scale(${scale})` });
+  overlayDemo.dataset.layout = form.layout;
+  overlayDemo.dataset.edge = form.edge;
+  overlayDemo.dataset.theme = previewLight ? "light" : "dark";
+  overlayDemo.toggleAttribute("data-no-backdrop", form.textOnly || form.backgroundOpacity === 0);
+  overlayDemo.style.setProperty("--desktop-opacity", form.backgroundOpacity / 100);
+  overlayDemo.style.setProperty("--desktop-window-opacity", form.windowOpacity / 100);
+  const group = state?.groups.find(item => item.id === state.current);
+  fitOverlayDemoNames([group?.name || "N/A", state?.upcoming[0]?.name || "—", state?.upcoming[1]?.name || "—"]);
+  overlayDemo.querySelector(".stage-name").style.opacity = group ? "1" : ".5";
+  const stage = overlayDemo.querySelector(".overlay-active-stage");
+  overlayDemo.classList.toggle("two-stage", !!state?.twoStage);
+  stage.hidden = !state?.twoStage;
+  if (state?.twoStage) stage.textContent = stageName(state.stage);
+  overlayDemo.querySelector(".stage-phase").textContent = phaseLabel(state);
+  paintOverlayTimer();
+}
+
+function paintOverlayTimer() {
+  if (!overlayDemoScreen.clientWidth) return;
+  paintCountdown(overlayDemo, overlayDemoClock, state, service?.serverNow, previewLight, overlayDemoClock.querySelector(".timer"));
+}
+
+function renderOverlay() {
+  const enabled = !offline && state && Object.hasOwn(state, "overlay");
+  $("overlay-fields").disabled = !enabled || !canWrite();
+  $("overlay-form").hidden = offline;
+  $("overlay-help").hidden = offline;
+  $("overlay-offline").hidden = !offline;
+  const key = enabled ? `${state.instance}:${state.overlay?.revision ?? 0}` : null;
+  if (key !== overlaySignature) {
+    overlaySignature = key;
+    overlaySaved = false;
+    writeOverlayForm(enabled ? state.overlay : null);
+  }
+  paintOverlayForm();
+}
+
+$("overlay-form").addEventListener("input", () => { overlaySaved = false; paintOverlayForm(); });
+new ResizeObserver(paintOverlayDemo).observe(overlayDemoScreen);
+$("overlay-form").onsubmit = async event => {
+  event.preventDefault();
+  if (offline || !canWrite() || !Object.hasOwn(state, "overlay")) return;
+  overlaySaved = await command("overlay", { overlay: readOverlayForm() });
+  paintOverlayForm();
+};
+
+function loadOverlayClient(device) {
+  const client = overlayClients.find(item => String(item.device) === device);
+  if (!client) return;
+  overlayScreen = client.screen;
+  writeOverlayForm(client.appearance);
+  overlaySaved = false;
+  overlayReadStatus = "overlayLoaded";
+  paintOverlayForm();
+}
+
+$("overlay-read").onclick = () => {
+  if (offline || !canWrite()) return;
+  perform(async () => {
+    const { clients } = await request("overlay/clients", {});
+    const devices = $("overlay-devices");
+    const selected = devices.value;
+    overlayClients = clients;
+    devices.replaceChildren(...clients.map(client => new Option(`${t("overlayDevice")} ${client.device}`, client.device)));
+    devices.hidden = clients.length < 2;
+    if (clients.some(client => String(client.device) === selected)) devices.value = selected;
+    if (clients.length) loadOverlayClient(devices.value);
+    else { overlayReadStatus = "overlayNoApps"; paintOverlayForm(); }
+  });
+};
+$("overlay-devices").onchange = event => loadOverlayClient(event.target.value);
 
 function renderStageSettings() {
   const enabled = $("two-stage-groups").checked;
@@ -292,6 +435,7 @@ function receive(next) {
 function paintPreview() {
   const preview = $("timer-preview");
   paintCountdown(preview, preview, state, service.serverNow, previewLight);
+  paintOverlayTimer();
 }
 
 const onlineCallbacks = {
@@ -331,6 +475,11 @@ function switchMode(useLocal) {
   $("names").value = typeof draft?.names === "string" ? draft.names : "";
   queueSignature = null;
   settingsSignature = null;
+  overlayClients = [];
+  overlayScreen = undefined;
+  overlayReadStatus = undefined;
+  $("overlay-devices").replaceChildren();
+  $("overlay-devices").hidden = true;
   $("server-form").hidden = true;
   notice();
   if (offline) {

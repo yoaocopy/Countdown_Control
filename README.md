@@ -4,6 +4,8 @@ A countdown timer you can configure and control remotely. 一个可远程设置�
 
 [Open the bilingual HTML guide · 打开双语网页版使用说明](web/guide.html)
 
+[Windows countdown overlay · Windows 倒计时悬浮窗](app_JS_Electron/README.md)
+
 [Single- and two-stage projection · 单阶段与双阶段投影](web/display.html)
 
 [Clock · 时钟](web/clock.html) can open directly or at `/clock` on the server. Choose device time, the countdown server’s time, or both. 主钟默认使用电脑时区，支持字号调整和多城市显示。

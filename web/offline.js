@@ -1,5 +1,5 @@
 const OfflineCountdown = (() => {
-  const { isFile, appUrl, storage, restoreClock, rememberClock, temporary } = CountdownUI;
+  const { isFile, appUrl, storage, restoreClock, rememberClock, temporary, settleClock } = CountdownUI;
   const key = "countdown-offline-configuration";
   const namespace = "project-demo-countdown";
   const target = isFile ? "*" : location.origin;
@@ -63,14 +63,16 @@ const OfflineCountdown = (() => {
     let deadline = restored.deadline;
     const saved = phase !== "ready" && temporary("offline-clock");
     let stage = saved?.stage === "questions" ? "questions" : "presentation";
+    let questionsAt = null;
     let plan = planFor(config.settings);
     if (typeof saved?.plan?.twoStage === "boolean" && typeof saved.plan.autoAdvance === "boolean" &&
         Number.isInteger(saved.plan.questionsMs) && saved.plan.questionsMs >= 1000 && saved.plan.questionsMs <= 5999000) {
       plan = saved.plan;
     }
-    if (saved?.phase === "running" && phase === "finished" && waitingQuestions() && plan.autoAdvance) {
-      startQuestions(saved.wallDeadline);
-      if (now() >= deadline) finish();
+    if (phase === "finished" && plan.autoAdvance && waitingQuestions()) {
+      if (saved?.phase === "running" && Number.isFinite(saved.wallDeadline)) deadline = saved.wallDeadline;
+      if (saved?.phase === "finished" && Number.isFinite(saved.questionsAt)) questionsAt = saved.questionsAt;
+      advanceClock(now(), false);
     }
     const instance = identifier();
     const listeners = new Set();
@@ -83,20 +85,17 @@ const OfflineCountdown = (() => {
       return plan.twoStage && stage === "presentation" && phase === "finished";
     }
     function startQuestions(at) {
+      questionsAt = null;
       stage = "questions";
       phase = "running";
       remaining = plan.questionsMs;
       deadline = at + remaining;
     }
-    function finish() {
-      deadline = null;
-      remaining = 0;
-      phase = "finished";
-    }
     function resetClock(value) {
       phase = "ready";
       remaining = value.duration * 1000;
       deadline = null;
+      questionsAt = null;
       stage = "presentation";
       plan = planFor(value);
     }
@@ -104,7 +103,7 @@ const OfflineCountdown = (() => {
       const index = config.groups.findIndex(group => group.id === config.current);
       const serverNow = now();
       return { ...config, instance, mode: "local", revision, serverNow, phase, deadline,
-        twoStage: plan.twoStage, stage, waitingQuestions: waitingQuestions(),
+        twoStage: plan.twoStage, stage, waitingQuestions: waitingQuestions(), questionsAt,
         remainingMs: deadline === null ? remaining : Math.max(0, deadline - serverNow),
         upcoming: index < 0 ? [] : config.groups.slice(index + 1, index + 3) };
     }
@@ -122,7 +121,7 @@ const OfflineCountdown = (() => {
       publish("state", state);
     }
     function remember() {
-      rememberClock("offline-clock", { phase, remainingMs: remaining, deadline }, now, config.current, { stage, plan });
+      rememberClock("offline-clock", { phase, remainingMs: remaining, deadline }, now, config.current, { stage, plan, questionsAt });
     }
     window.addEventListener("pagehide", remember);
     function audio(sound, volume = config.settings.volume, issued = now()) {
@@ -130,25 +129,24 @@ const OfflineCountdown = (() => {
       publish("audio", event);
       listeners.forEach(listener => listener.onAudio?.(event));
     }
+    function advanceClock(timestamp, audible) {
+      const { sound, volume } = config.settings;
+      const result = settleClock({ phase, remainingMs: remaining, deadline, stage, questionsAt }, timestamp,
+        { questionsMs: plan.questionsMs, autoQuestions: plan.twoStage && plan.autoAdvance, sound, volume }, audible);
+      if (result) ({ phase, remainingMs: remaining, deadline, stage, questionsAt } = result.timer);
+      return result;
+    }
     function settle() {
       const timestamp = now();
-      if (deadline === null || timestamp < deadline) return;
-      let finishedAt = deadline;
-      finish();
-      if (waitingQuestions() && plan.autoAdvance) {
-        startQuestions(finishedAt);
-        if (timestamp >= deadline) {
-          finishedAt = deadline;
-          finish();
-        }
-      }
+      const result = advanceClock(timestamp, true);
+      if (!result) return;
       revision++;
       stateChanged();
-      if (timestamp - finishedAt < 2000) {
-        const transition = phase === "running";
+      const { finishedAt, transition } = result;
+      if (finishedAt !== null && timestamp - finishedAt < 2000) {
         publish("finish", { deadline: finishedAt, transition });
         const { sound, volume } = config.settings;
-        if (sound !== "mute" && volume > 0) audio(transition ? "double" : sound, volume, finishedAt);
+        if (sound !== "mute" && volume > 0) audio(sound, volume, finishedAt);
       }
     }
     setInterval(settle, 150);
@@ -233,7 +231,7 @@ const OfflineCountdown = (() => {
           reset = true;
           break;
         case "questions":
-          check(waitingQuestions(), "unavailable");
+          check(waitingQuestions() && questionsAt === null, "unavailable");
           startQuestions(now());
           break;
         case "start":

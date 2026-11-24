@@ -1,19 +1,21 @@
-function createProjectionFollower({ audio, isActive, update, animate }) {
+function createProjectionFollower({ audio, enabled = true, isActive, update, animate }) {
   const { $, t, connect, isFile, showNotice } = CountdownUI;
   const offline = isFile || new URLSearchParams(location.search).get("mode") === "offline";
   const notice = message => showNotice($("display-notice"), message);
   let state;
   let connected = false;
+  let client;
   let checkedDeadline = null;
   const audible = value => !!value && value.settings.sound !== "mute" && value.settings.volume > 0;
 
-  const service = (offline ? OfflineCountdown.projection : connect)({
+  const service = enabled ? (offline ? OfflineCountdown.projection : connect)({
     onState(next) {
       if (isActive() && audible(state) && !audible(next)) audio.stop();
       state = next;
       update();
     },
-    onConnection(value) { connected = value; update(); },
+    onConnection(value) { connected = value; if (!value) client = undefined; update(); },
+    onWelcome(welcome) { client = welcome.client; update(); },
     onFinish(event, now) {
       if (isActive() && connected && now() - event.deadline < 2000 &&
           (state?.phase === "finished" || event.transition)) animate();
@@ -21,7 +23,7 @@ function createProjectionFollower({ audio, isActive, update, animate }) {
     onAudio(event, now) {
       if (isActive() && connected && now() - event.issued < 2000) audio.play(event.sound, event.volume);
     },
-  });
+  }) : null;
 
   function paintControls() {
     const hasController = window.opener && !window.opener.closed;
@@ -49,8 +51,10 @@ function createProjectionFollower({ audio, isActive, update, animate }) {
   }, true);
 
   return {
-    serverNow: service.serverNow, paintControls,
+    serverNow: service?.serverNow, paintControls,
     get state() { return state; },
+    get connected() { return connected; },
+    get client() { return client; },
     checkDeadline(seconds) {
       if (offline && state?.deadline != null && seconds === 0 && state.deadline !== checkedDeadline) {
         checkedDeadline = state.deadline;

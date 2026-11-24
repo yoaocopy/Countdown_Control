@@ -77,6 +77,27 @@ const strings = {
   audioHelp: ["The projection plays the finish sound. Select Mute or set volume to 0 for a silent countdown.", "投影页默认播放到时铃声。需要安静计时时，可选择静音或将音量设为 0。"],
   preview: ["Preview on projection", "在投影端试听"], previewSent: ["Preview sent to the projection.", "试听已发送到投影端。"],
   enableSound: ["Enable sound", "启用声音"],
+  overlayControls: ["Desktop overlay", "桌面悬浮窗"],
+  overlayHelp: ["Applies to desktop apps following this server. Positions are relative to the screen selected on each app.", "应用于跟随此服务器的桌面悬浮窗。位置以每台电脑在 App 中选定的屏幕为准。"],
+  overlayOffline: ["Switch the console online to control the desktop overlay.", "控制台切换到在线模式后可控制桌面悬浮窗。"],
+  overlayLayout: ["Layout", "布局"], overlayCard: ["Standard card", "标准卡片"],
+  overlayText: ["Text only", "仅文字（背景全透明）"], overlayCompact: ["Compact · side queue", "紧凑 · 队列在侧"],
+  overlayCompactTop: ["Compact · queue above", "紧凑 · 队列在上"],
+  overlayEdge: ["Background edge", "背景边缘"], overlayEdgeSolid: ["Defined border", "清晰边框"], overlayEdgeFade: ["Soft fade", "柔和渐隐"],
+  overlayPosition: ["Position", "位置"], overlayKeep: ["Keep current location", "保持原位"],
+  overlayCustom: ["Custom offset", "自定义偏移"],
+  overlayLeftTop: ["Top left", "左上角"], overlayCenterTop: ["Top center", "上方居中"], overlayRightTop: ["Top right", "右上角"],
+  overlayLeftMiddle: ["Middle left", "左侧居中"], overlayCenterMiddle: ["Center", "正中"], overlayRightMiddle: ["Middle right", "右侧居中"],
+  overlayLeftBottom: ["Bottom left", "左下角"], overlayCenterBottom: ["Bottom center", "下方居中"], overlayRightBottom: ["Bottom right", "右下角"],
+  overlayX: ["From left (px)", "距左侧（px）"], overlayY: ["From top (px)", "距顶部（px）"],
+  overlayWidth: ["Width (px)", "宽度（px）"], overlayHeight: ["Height (px)", "高度（px）"],
+  overlayWindowOpacity: ["Overall opacity", "整体不透明度"], overlayBackgroundOpacity: ["Background opacity", "背景不透明度"],
+  overlayApply: ["Apply to desktop overlay", "应用到悬浮窗"], overlaySaved: ["Overlay settings saved to this server.", "悬浮窗设置已保存到此服务器。"],
+  overlayPreview: ["Preview before applying", "应用前预览"],
+  overlayRead: ["Read current app settings", "读取当前 App 参数"],
+  overlayDevice: ["Desktop app", "桌面 App"],
+  overlayLoaded: ["Loaded from the app into this form.", "已将 App 的当前参数载入本表单。"],
+  overlayNoApps: ["No connected desktop app has reported settings.", "没有已连接的桌面 App 上报参数。"],
   soundBlocked: ["Could not enable audio in this browser.", "此浏览器未能启用声音。"],
   fullscreen: ["Fullscreen", "全屏"], fullscreenFailed: ["Fullscreen could not open. Try F11.", "无法进入全屏。可尝试按 F11。"],
   confirmReset: ["Reset the current countdown?", "重置当前计时？"],
@@ -350,6 +371,33 @@ const soundPatterns = {
   bell: [[0, 740, .39, 1], [.26, 493.88, .39, 1]],
 };
 
+function settleClock(timer, now, { questionsMs, autoQuestions, sound, volume }, audible = true) {
+  const next = { ...timer };
+  let finishedAt = null;
+  const finish = () => Object.assign(next, { phase: "finished", deadline: null, remainingMs: 0 });
+  if (timer.deadline !== null && now >= timer.deadline) {
+    finishedAt = timer.deadline;
+    finish();
+    if (autoQuestions && timer.stage === "presentation") {
+      const duration = volume > 0 && soundPatterns[sound] ?
+        Math.round(1000 * Math.max(...soundPatterns[sound].map(([offset, , length]) => offset + length))) : 0;
+      const playsNow = duration > 0 && audible && now - finishedAt < 2000;
+      next.questionsAt = (playsNow ? now : finishedAt) + duration;
+    }
+  } else if (timer.questionsAt == null || now < timer.questionsAt) {
+    return null;
+  }
+  if (next.questionsAt != null && now >= next.questionsAt) {
+    Object.assign(next, { stage: "questions", phase: "running", deadline: next.questionsAt + questionsMs,
+      remainingMs: questionsMs, questionsAt: null });
+    if (now >= next.deadline) {
+      finishedAt = next.deadline;
+      finish();
+    }
+  }
+  return { timer: next, finishedAt, transition: finishedAt !== null && next.phase === "running" };
+}
+
 function createTimerAudio() {
   let context;
   const sounding = new Set();
@@ -398,11 +446,10 @@ function createTimerAudio() {
   return { prepare, unlock, stop, play, get ready() { return context?.state === "running"; } };
 }
 
-function paintCountdown(palette, clock, state, clockNow, light) {
+function paintCountdown(palette, clock, state, clockNow, light, timer = $("timer")) {
   const remaining = state ? remainingTime(state, clockNow) : 0;
   const seconds = Math.ceil(remaining / 1000);
   const digits = state ? [Math.floor(seconds / 60), seconds % 60].map(value => String(value).padStart(2, "0")).join(":") : "--:--";
-  const timer = $("timer");
   if (timer.textContent !== digits) timer.textContent = digits;
   const final = finalPalette(palette, state?.phase, remaining, light);
   const settings = state?.settings;
@@ -414,7 +461,7 @@ function paintCountdown(palette, clock, state, clockNow, light) {
 
 return { $, t, setupLanguage, connect, remainingTime, currentName, stageName, phaseLabel, reducedMotion,
   post, showNotice, isFile, appUrl, storage, temporary, setupTemporaryClear, restoreClock, rememberClock, createTimerAudio,
-  paintCountdown };
+  paintCountdown, settleClock };
 })();
 
 if (document.body.classList.contains("guide-page")) {

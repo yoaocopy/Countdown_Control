@@ -10,6 +10,11 @@ DEFAULTS = dict(duration=300, warning=30, effect="color", sound="beep", volume=7
                 twoStage=False, questionsDuration=120, autoAdvance=False)
 EFFECTS = {"off", "color", "pulse"}
 SOUNDS = {"beep", "double", "tone", "chime", "bell", "mute"}
+# Match the final note end times in web/common.js.
+SOUND_MS = {"beep": 3000, "double": 400, "tone": 950, "chime": 670, "bell": 650, "mute": 0}
+OVERLAY_POSITIONS = {"keep", "custom", *(f"{x}-{y}" for x in ("left", "center", "right") for y in ("top", "middle", "bottom"))}
+OVERLAY_LAYOUTS = {"card", "compact", "compact-top", "text"}  # "text" is the legacy card preset.
+OVERLAY_EDGES = {"solid", "fade"}
 MAX_GROUPS = 200
 MAX_NAME = 120
 
@@ -51,6 +56,26 @@ def settings_for(value):
                 twoStage=two_stage, questionsDuration=questions_duration, autoAdvance=auto_advance)
 
 
+def overlay_for(value):
+    require(isinstance(value, dict))
+    position, layout = value.get("position"), value.get("layout")
+    require(isinstance(position, str) and position in OVERLAY_POSITIONS)
+    require(isinstance(layout, str) and layout in OVERLAY_LAYOUTS)
+    text_only = value.get("textOnly", False)
+    edge = value.get("edge", "solid")
+    require(type(text_only) is bool)
+    require(isinstance(edge, str) and edge in OVERLAY_EDGES)
+    result = dict(position=position, layout="card" if layout == "text" else layout,
+                  textOnly=text_only or layout == "text", edge=edge)
+    for key, minimum, maximum in (("width", 330, 8192), ("height", 200, 8192),
+                                  ("offsetX", 0, 8192), ("offsetY", 0, 8192),
+                                  ("windowOpacity", 10, 100), ("backgroundOpacity", 0, 100)):
+        item = value.get(key)
+        require(type(item) is int and minimum <= item <= maximum)
+        result[key] = item
+    return result
+
+
 def read_configuration(value):
     require(isinstance(value, dict) and value.get("version") == 1)
     groups = value.get("groups")
@@ -66,14 +91,19 @@ def read_configuration(value):
         cleaned.append(dict(id=identifier, name=group_name(group.get("name"))))
     current = value.get("current")
     require((not cleaned and current is None) or (isinstance(current, str) and current in ids))
-    return dict(version=1, groups=cleaned, current=current, settings=settings_for(value.get("settings")))
+    overlay = value.get("overlay")
+    if overlay is not None:
+        revision = overlay.get("revision") if isinstance(overlay, dict) else None
+        require(type(revision) is int and revision >= 1)
+        overlay = dict(overlay_for(overlay), revision=revision)
+    return dict(version=1, groups=cleaned, current=current, settings=settings_for(value.get("settings")), overlay=overlay)
 
 
 class Countdown:
     def __init__(self, path, clock=time.monotonic):
         self.path = Path(path)
         self.clock = clock
-        self.configuration = dict(version=1, groups=[], current=None, settings=DEFAULTS.copy())
+        self.configuration = dict(version=1, groups=[], current=None, settings=DEFAULTS.copy(), overlay=None)
         if self.path.exists():
             self.configuration = read_configuration(json.loads(self.path.read_text(encoding="utf-8")))
         self.revision = 0
@@ -83,6 +113,7 @@ class Countdown:
         self.phase = "ready"
         self.remaining = settings["duration"] * 1000
         self.deadline = None
+        self.questions_at = None
         self.stage = "presentation"
         self.two_stage = settings["twoStage"]
         self.questions_duration = settings["questionsDuration"] * 1000
@@ -92,6 +123,7 @@ class Countdown:
         return self.two_stage and self.stage == "presentation" and self.phase == "finished"
 
     def start_questions(self, timestamp):
+        self.questions_at = None
         self.stage = "questions"
         self.phase = "running"
         self.remaining = self.questions_duration
@@ -102,17 +134,24 @@ class Countdown:
 
     def settle(self):
         now = self.now()
-        if self.deadline is None or now < self.deadline:
+        finished_at = None
+        if self.deadline is not None and now >= self.deadline:
+            finished_at = self.deadline
+            self.phase, self.remaining, self.deadline = "finished", 0, None
+            if self.waiting_for_questions() and self.auto_advance:
+                settings = self.configuration["settings"]
+                duration = SOUND_MS[settings["sound"]] if settings["volume"] else 0
+                start = now if duration and now - finished_at < 2000 else finished_at
+                self.questions_at = start + duration
+        elif self.questions_at is None or now < self.questions_at:
             return None
-        finished_at = self.deadline
-        self.phase, self.remaining, self.deadline = "finished", 0, None
-        if self.waiting_for_questions() and self.auto_advance:
-            self.start_questions(finished_at)
+        if self.questions_at is not None and now >= self.questions_at:
+            self.start_questions(self.questions_at)
             if now >= self.deadline:
                 finished_at = self.deadline
                 self.phase, self.remaining, self.deadline = "finished", 0, None
         self.revision += 1
-        return {"deadline": finished_at, "transition": self.phase == "running"}
+        return {"deadline": finished_at, "transition": finished_at is not None and self.phase == "running"}
 
     def snapshot(self):
         now = self.now()
@@ -121,6 +160,7 @@ class Countdown:
         index = next((i for i, group in enumerate(groups) if group["id"] == current), None)
         return dict(**self.configuration, revision=self.revision, serverNow=now, deadline=self.deadline,
                     phase=self.phase, twoStage=self.two_stage, stage=self.stage, waitingQuestions=self.waiting_for_questions(),
+                    questionsAt=self.questions_at,
                     remainingMs=self.remaining if self.deadline is None else max(0, self.deadline - now),
                     upcoming=[] if index is None else groups[index + 1:index + 3])
 
@@ -142,6 +182,7 @@ class Countdown:
         config = self.configuration
         groups, current = config["groups"], config["current"]
         selected, updated, settings = current, groups, config["settings"]
+        overlay = config["overlay"]
         identifier = body.get("id")
         index = next((i for i, group in enumerate(groups) if group["id"] == identifier), None)
         reset = False
@@ -195,6 +236,8 @@ class Countdown:
         elif action == "settings":
             settings = settings_for(body.get("settings"))
             reset = self.phase == "ready"
+        elif action == "overlay":
+            overlay = dict(overlay_for(body.get("overlay")), revision=(overlay or {}).get("revision", 0) + 1)
         elif action == "import":
             imported = read_configuration(body.get("configuration"))
             updated, selected, settings = imported["groups"], imported["current"], imported["settings"]
@@ -202,7 +245,7 @@ class Countdown:
         elif action == "reset":
             reset = True
         elif action == "questions":
-            require(self.waiting_for_questions(), "unavailable", 409)
+            require(self.waiting_for_questions() and self.questions_at is None, "unavailable", 409)
             self.start_questions(self.now())
         elif action in ("start", "resume", "pause"):
             required = {"start": "ready", "resume": "paused", "pause": "running"}[action]
@@ -218,7 +261,7 @@ class Countdown:
 
         if reset and (self.phase in ("running", "paused") or self.waiting_for_questions()):
             require(body.get("confirmed") is True, "confirmRequired", 409)
-        new_configuration = dict(version=1, groups=updated, current=selected, settings=settings)
+        new_configuration = dict(version=1, groups=updated, current=selected, settings=settings, overlay=overlay)
         if new_configuration != config:
             self.save(new_configuration)
             self.configuration = new_configuration

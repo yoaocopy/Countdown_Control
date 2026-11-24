@@ -16,7 +16,7 @@ import time
 from urllib.parse import urlsplit
 import webbrowser
 
-from timer_state import Countdown, Rejected, SOUNDS, require
+from timer_state import Countdown, Rejected, SOUNDS, overlay_for, require
 
 
 ROOT = Path(__file__).resolve().parent
@@ -30,7 +30,8 @@ ASSETS = {
     "/clock": ("clock.html", "text/html"),
     "/clock.html": ("clock.html", "text/html"),
     "/style.css": ("style.css", "text/css"),
-    **{f"/{name}.js": (f"{name}.js", "text/javascript") for name in ("common", "offline", "console", "display", "projection", "two-stage", "clock")},
+    "/overlay.css": ("overlay.css", "text/css"),
+    **{f"/{name}.js": (f"{name}.js", "text/javascript") for name in ("common", "offline", "console", "display", "projection", "two-stage", "clock", "overlay-names")},
 }
 
 
@@ -45,6 +46,8 @@ class Event:
         self.failures = deque()
         self.streams = {}
         self.projections = set()
+        self.overlays = {}
+        self.overlay_number = 0
         self.changed = threading.Condition()
 
     def snapshot(self):
@@ -70,12 +73,13 @@ class Event:
         result = self.timer.settle()
         if result:
             self.emit("state", self.snapshot())
+            if result["deadline"] is None:
+                return
             self.emit("finish", result)
             settings = self.timer.configuration["settings"]
             if (self.projections and settings["sound"] != "mute" and settings["volume"] > 0
                     and self.timer.now() - result["deadline"] < 2000):
-                sound = "double" if result["transition"] else settings["sound"]
-                self.send_audio(sound=sound, issued=result["deadline"])
+                self.send_audio(issued=result["deadline"])
 
     def send_audio(self, *, sound=None, volume=None, issued=None):
         settings = self.timer.configuration["settings"]
@@ -88,6 +92,8 @@ class Event:
             while not stopped.is_set():
                 self.settle()
                 deadline = self.timer.deadline
+                if deadline is None:
+                    deadline = self.timer.questions_at
                 timeout = None if deadline is None else max(0, (deadline - self.timer.now()) / 1000)
                 self.changed.wait(timeout)
 
@@ -214,6 +220,9 @@ class Handler(BaseHTTPRequestHandler):
             event.streams[identifier] = inbox
             if projection:
                 event.projections.add(identifier)
+                if self.headers.get("X-Countdown-Overlay") == "1":
+                    event.overlay_number += 1
+                    event.overlays[identifier] = {"device": event.overlay_number}
         try:
             self.headers_for(200, "text/event-stream; charset=utf-8")
             self.send_event("welcome", dict(client=identifier, state=snapshot))
@@ -230,6 +239,7 @@ class Handler(BaseHTTPRequestHandler):
             with event.changed:
                 event.streams.pop(identifier, None)
                 event.projections.discard(identifier)
+                event.overlays.pop(identifier, None)
 
     def send_event(self, name, value):
         self.wfile.write(f"event: {name}\ndata: {json.dumps(value, ensure_ascii=False)}\n\n".encode())
@@ -291,7 +301,20 @@ class Handler(BaseHTTPRequestHandler):
         bearer = credential if scheme.lower() == "bearer" else ""
         if path == "/api/pair":
             return event.pair(body)
+        if path == "/api/overlay/report":
+            require(bearer in event.overlays, "unpaired", 401)
+            screen = body.get("screen")
+            require(isinstance(screen, dict))
+            width, height = screen.get("width"), screen.get("height")
+            require(type(width) is int and 1 <= width <= 32768 and type(height) is int and 1 <= height <= 32768)
+            event.overlays[bearer].update(appearance=overlay_for(body.get("appearance")),
+                                          screen={"width": width, "height": height}, reported=time.monotonic())
+            return {}
         require(bearer in event.tokens, "unpaired", 401)
+        if path == "/api/overlay/clients":
+            now = time.monotonic()
+            return {"clients": [{key: client[key] for key in ("device", "appearance", "screen")}
+                                for client in event.overlays.values() if now - client.get("reported", -float("inf")) < 35]}
         if path == "/api/session":
             return {"instance": event.instance}
         if path == "/api/preview":
