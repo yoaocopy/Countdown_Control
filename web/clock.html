@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clock</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./common.js"></script>
+  <script defer src="./clock.js"></script>
+</head>
+<body class="projection clock-page" data-page-title="wallClock">
+  <header class="clock-toolbar">
+    <h1 data-t="wallClock">Clock</h1>
+    <nav class="display-controls">
+      <a href="./guide.html" target="_blank" rel="noopener" data-t="guide">Guide</a>
+      <button id="display-theme" type="button" data-t="lightTheme">Light theme</button>
+      <button id="language" type="button" aria-label="Switch to Chinese">CN/EN</button>
+      <button id="fullscreen" type="button" data-t="fullscreen">Fullscreen</button>
+    </nav>
+  </header>
+  <p id="clock-notice" class="notice" role="status" hidden></p>
+  <div class="clock-layout">
+    <main class="clock-board">
+      <section class="clock-main">
+        <h2 id="primary-zone-name" data-t="clockLocalZone">Computer time zone</h2>
+        <p id="primary-zone-id" class="clock-zone-id"></p>
+        <div id="primary-readings" class="clock-readings"></div>
+        <p id="clock-sync-status" class="clock-sync-status" role="status" hidden></p>
+      </section>
+      <section id="clock-city-section" class="clock-city-section" hidden>
+        <h2 data-t="clockCities">Other cities</h2>
+        <div id="city-readings" class="clock-cities"></div>
+      </section>
+    </main>
+    <aside class="clock-options">
+      <label for="clock-source"><span data-t="clockSource">Time source</span>
+        <select id="clock-source">
+          <option value="local" data-t="clockLocal">Device time</option>
+          <option value="network" data-t="clockNetwork">Network time</option>
+          <option value="both" data-t="clockBoth">Both</option>
+        </select>
+      </label>
+      <form id="clock-network-form" hidden>
+        <label id="clock-server-label" for="clock-server" hidden><span data-t="clockServer">Time server address</span>
+          <input id="clock-server" type="url" placeholder="https://example.edu/timer/">
+        </label>
+        <button id="clock-sync" type="submit" data-t="clockSync">Sync now</button>
+      </form>
+      <label for="clock-primary-zone"><span data-t="clockPrimaryZone">Main time zone</span>
+        <select id="clock-primary-zone"></select>
+      </label>
+      <label for="clock-size"><span><span data-t="clockSize">Main clock size</span> <output id="clock-size-value" for="clock-size">100%</output></span>
+        <input id="clock-size" type="range" min="60" max="160" step="5" value="100">
+      </label>
+      <fieldset>
+        <legend data-t="clockCities">Other cities</legend>
+        <div id="clock-city-picker" class="clock-city-picker"></div>
+      </fieldset>
+    </aside>
+  </div>
+</body>
+</html>

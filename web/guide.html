@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Countdown guide</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./common.js"></script>
+</head>
+<body class="guide-page" data-page-title="guideTitle">
+  <header class="topbar">
+    <h1 data-t="guideTitle">Countdown guide</h1>
+    <nav class="toolbar" aria-label="Countdown">
+      <a href="./console.html" data-server-href="/" data-t="openConsole">Open console</a>
+      <a href="./display.html" data-server-href="/display" data-t="openDisplay">Open projection</a>
+      <a href="./two-stage.html" data-server-href="/two-stage" data-t="twoStage">Two-stage timer</a>
+      <a href="./clock.html" data-server-href="/clock" data-t="wallClock">Clock</a>
+      <button id="language" type="button" aria-label="Switch to Chinese">CN/EN</button>
+      <button id="clear-temporary" type="button" data-t="clearTemporary">Clear temporary state</button>
+    </nav>
+  </header>
+  <p id="guide-notice" class="notice guide-notice" role="status" hidden></p>
+
+  <main class="guide-content" lang="en" data-guide-lang="en">
+    <section class="panel guide-intro">
+      <h2>Choose a mode</h2>
+      <div class="guide-modes">
+        <div><h3>Standalone timer</h3><p>Double-click <code>display.html</code>. Set minutes and seconds, then use <strong>Start</strong>, <strong>Pause</strong>, <strong>Resume</strong>, or <strong>Reset</strong>. On the server’s projection page, select <strong>Standalone timer</strong> to use the same controls.</p></div>
+        <div><h3>Offline console</h3><p>Double-click <code>console.html</code> to manage the timer and group queue on this computer. Keep the <code>web</code> folder intact. Use <strong>Open projection</strong> for a second window and keep the console open.</p></div>
+        <div><h3>Online or LAN</h3><p>Open the server address and pair the console to control the venue projection from another computer. Use <strong>Follow console</strong> on the projection page.</p></div>
+      </div>
+    </section>
+    <div class="guide-grid">
+      <section class="panel">
+        <h2>Run a session</h2>
+        <ol>
+          <li>Start with an empty queue and <code>N/A</code>, or paste one group name per line. Select a group, then click <strong>Set as current</strong> to switch the timer to it.</li>
+          <li>Use <strong>Batch edit</strong> to drag groups and check any you want to delete. <strong>Apply changes</strong> saves the draft as one update. Removing the current group during an active session requires confirmation.</li>
+          <li>Set the duration, warning, finish sound, and volume. Use <strong>Test sound</strong> beside the sound selector to listen on your current computer. Select <strong>Save settings</strong>. The default sound plays three beeps that get louder, higher, and closer together, then holds a higher tone for about one second.</li>
+          <li>Control the timer from the console. It stays at <code>00:00</code> when time is up. Select <strong>Next group</strong>, then <strong>Start</strong>.</li>
+        </ol>
+        <p>Use <strong>Export queue and settings</strong> and <strong>Import backup</strong> to transfer data between the public, LAN, and browser modes.</p>
+      </section>
+      <section class="panel">
+        <h2>Set up the projection</h2>
+        <ol>
+          <li>On Windows, press <kbd>Win</kbd> + <kbd>P</kbd> and choose <strong>Extend</strong>.</li>
+          <li>Open the regular projection on the venue computer. It plays the selected finish sound by default. Choose <strong>Mute</strong> or set volume to <code>0</code> for silent timing.</li>
+          <li>Move the projection window to the second display. Set <strong>Light theme</strong> or <strong>Dark theme</strong>, then choose <strong>Fullscreen</strong>. Press <kbd>Esc</kbd> to restore the controls.</li>
+        </ol>
+        <p>If the browser requires a click before playing audio, clicking <strong>Fullscreen</strong> also enables it. If needed, use <strong>Enable sound</strong> on the projection. Use <strong>Preview on projection</strong> from the console to check the venue speakers.</p>
+        <p>The final 10 seconds start with 5 seconds of gentle contrast changes, build for 3 seconds, then flash between light and dark for 2 seconds. With reduced motion enabled, the display keeps a steady theme.</p>
+      </section>
+      <section class="panel">
+        <h2>Use the Windows LAN backup</h2>
+        <p>On the venue computer, double-click <code>start.bat</code> and enter <kbd>L</kbd>. With Python 3.10+ installed, it opens the local console and prints the LAN address and pairing code for the teacher.</p>
+        <p>Allow inbound TCP port <code>8765</code> on the trusted Windows network. From the teacher’s computer, test the venue address in PowerShell.</p>
+        <pre><code>Test-NetConnection 192.168.1.20 -Port 8765</code></pre>
+        <p>Replace the sample IP with the venue computer’s address. If the address and firewall are correct and the test fails, use a permitted hotspot or the venue console.</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>Display the current time</h2>
+        <p>Open <strong>Clock</strong> or double-click <code>clock.html</code>. The main clock starts in the computer’s time zone. Change the main clock size, choose a main time zone if needed, and check other cities to show them below in smaller type.</p>
+        <p>Choose <strong>Device time</strong>, <strong>Network time</strong>, or <strong>Both</strong>. Network time comes from the countdown server’s system clock. The hosted page uses its own server. In the local HTML file, enter the console’s HTTP or HTTPS address, including a subpath such as <code>/timer/</code> when applicable, then click <strong>Sync now</strong>. Device time works offline.</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>Presentation and Q&amp;A</h2>
+        <p>In the console, enable <strong>Two stages per group</strong>, set the Presentation and Q&amp;A times, and save. Use <strong>Open projection</strong> to show the current group, stage, and queue. This works from the paired online or LAN console and from the local offline console.</p>
+        <p>Turn on <strong>Automatically start Q&amp;A</strong> for continuous timing. With it off, Presentation holds at <code>00:00</code> until you select <strong>Start Q&amp;A</strong> on the console. After Q&amp;A, <strong>Next group</strong> prepares that group’s Presentation. <strong>Reset</strong> returns to the current group’s Presentation. Changes to stage timing made mid-group apply on reset or the next group.</p>
+        <p>For a single local timer, double-click <code>two-stage.html</code> or select <strong>Standalone timer</strong> in the two-stage projection. Its controls appear on the right on wide screens. Press <kbd>Esc</kbd> to reveal them from fullscreen.</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>Resume or clear temporary state</h2>
+        <p>This browser can restore recent local countdowns, queue drafts, and mode choices for about 30 minutes. A running local countdown keeps its original deadline. If it expired while closed, it opens at <code>00:00</code> without replaying the sound. Online projection always syncs to the server. After reopening a paired console, enter the current pairing code again if the browser did not restore the tab session.</p>
+        <p>Use <strong>Clear temporary state</strong> to discard these records and reset local timer progress. Saved queues, settings, and the server countdown stay in place. Browsers can store local HTML files separately, so use the button on each local page whose state you want to clear.</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>Use a public server</h2>
+        <h3>Choose the command for your setup</h3>
+        <div class="guide-table">
+          <table>
+            <thead><tr><th scope="col">Setup</th><th scope="col">Command</th><th scope="col">Open in the browser</th></tr></thead>
+            <tbody>
+              <tr><td>Existing Nginx HTTPS site</td><td><code>python3 server.py --public-url https://example.edu</code></td><td><code>https://example.edu/timer/</code> if mounted there</td></tr>
+              <tr><td>Classroom LAN, with the timer running on a venue PC</td><td><code>python server.py --lan</code> or <code>start.bat lan</code></td><td>The printed LAN address, e.g. <code>http://192.168.1.20:8765/</code></td></tr>
+              <tr><td>Only this computer, with no server</td><td>Double-click <code>web/console.html</code></td><td>The local file opens in offline mode</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>--public-url</code> tells Python which browser origin to accept for pairing and control. Nginx handles the HTTPS connection and can forward to Python over HTTP. Use the scheme, host, and any non-default port, for example <code>https://example.edu</code> for a page at <code>https://example.edu/timer/</code>.</p>
+        <p><code>--lan</code> starts a local-network HTTP service, listens on all IPv4 interfaces by default, and saves to <code>data/lan.json</code>. It skips the public URL setting.</p>
+        <p><code>COUNTDOWN_PUBLIC_URL</code> is optional. Set it on the server if you prefer to configure the same origin through an environment variable. Set it on a Windows client if you want <code>start.bat</code> to skip its prompt and open the full console URL, including <code>/timer/</code> if applicable. If you type the address or specify <code>--public-url</code> where needed, you can leave the variable unset.</p>
+        <p>The following Linux examples use <code>/opt/countdown</code>. Copy <code>server.py</code>, <code>timer_state.py</code>, and the complete <code>web/</code> folder there. Use Python 3.10+ and a service account that can write to <code>/opt/countdown/data</code>. Both methods use the same data file and port. Stop one instance before switching methods.</p>
+        <pre><code># Run from the project folder on the server
+sudo install -d /opt/countdown
+sudo cp -R server.py timer_state.py web /opt/countdown/
+sudo install -d -o "$(id -un)" /opt/countdown/data
+python3 --version</code></pre>
+        <h3>A. Direct HTTP</h3>
+        <p>Start the server on all IPv4 interfaces. In the OS firewall and hosting firewall, allow TCP <code>8765</code> from your participants’ IP addresses or private network.</p>
+        <p>The command below uses <code>env -u</code> to unset any inherited <code>COUNTDOWN_PUBLIC_URL</code> for this Python process. It leaves the current shell’s environment intact.</p>
+        <pre><code>cd /opt/countdown
+env -u COUNTDOWN_PUBLIC_URL python3 server.py --host 0.0.0.0 --port 8765</code></pre>
+        <p>Open <code>http://SERVER_IP:8765/</code> directly in a browser. The projection is at <code>http://SERVER_IP:8765/display</code>. HTTP sends the pairing code and control traffic in clear text, so use this option on a trusted network or over a VPN.</p>
+        <h3>B. HTTPS with Nginx</h3>
+        <ol>
+          <li>Point your domain’s DNS to the server. Allow inbound TCP <code>80</code> and <code>443</code> for Nginx. Python will listen on loopback, so keep <code>8765</code> closed externally.</li>
+          <li>Use an existing certificate for the domain, or install Certbot with its Nginx plugin. To obtain a certificate, first enable this temporary HTTP site in Nginx and reload it.</li>
+        </ol>
+        <pre><code>server {
+    listen 80;
+    server_name timer.example.edu;
+    location / { return 200 "Countdown certificate setup\n"; }
+}</code></pre>
+        <p>On Debian or Ubuntu, save this site as <code>/etc/nginx/sites-available/countdown</code> and create the symlink once. If it is already enabled, start with the second command.</p>
+        <pre><code>sudo ln -s /etc/nginx/sites-available/countdown /etc/nginx/sites-enabled/countdown
+sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+sudo certbot certonly --nginx -d timer.example.edu</code></pre>
+        <p>Start Python on the same host, with the exact HTTPS origin your browsers will use.</p>
+        <pre><code>cd /opt/countdown
+python3 server.py --host 127.0.0.1 --port 8765 --public-url https://timer.example.edu</code></pre>
+        <p>You can supply the address through the environment instead. If both are set, Python uses the explicit <code>--public-url</code> argument.</p>
+        <pre><code>COUNTDOWN_PUBLIC_URL=https://timer.example.edu python3 server.py --host 127.0.0.1 --port 8765</code></pre>
+        <p>On Windows, <code>start.bat</code> reads the same optional variable to open the public console without prompting. The following example sets it for the current Command Prompt. Use <code>start.bat lan</code> to choose the LAN backup.</p>
+        <pre><code>set "COUNTDOWN_PUBLIC_URL=https://timer.example.edu"
+start.bat</code></pre>
+        <p>Replace the temporary site with the following Nginx configuration. On Debian or Ubuntu, for example, save it in <code>/etc/nginx/sites-available/countdown</code> and enable it with a symlink in <code>sites-enabled/</code>. Substitute your domain and actual certificate paths.</p>
+        <pre><code>server {
+    listen 80;
+    server_name timer.example.edu;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name timer.example.edu;
+    ssl_certificate /etc/letsencrypt/live/timer.example.edu/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/timer.example.edu/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_set_header Host $host;
+        proxy_buffering off;
+        proxy_cache off;
+        gzip off;
+        proxy_read_timeout 30s;
+        client_max_body_size 384k;
+    }
+}</code></pre>
+        <pre><code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+curl -N https://timer.example.edu/api/events</code></pre>
+        <p>The last command should print a <code>welcome</code> event, then heartbeats. Press <kbd>Ctrl</kbd> + <kbd>C</kbd> to stop it. In a browser, open <code>https://timer.example.edu/</code> and pair with the code printed by Python. Keep Python running. By default, the code changes on each restart.</p>
+        <h3 id="subpath-en">Add a timer to an existing site at /timer/</h3>
+        <p>If Nginx already serves <code>https://example.edu</code>, run Python with the site origin below and add these two locations inside the existing <code>server</code> block that serves HTTPS. Keep the domain and certificate already configured for the site.</p>
+        <pre><code>python3 server.py --public-url https://example.edu</code></pre>
+        <pre><code>location = /timer {
+    return 308 /timer/$is_args$args;
+}
+
+location ^~ /timer/ {
+    proxy_pass http://127.0.0.1:8765/;
+    proxy_set_header Host $host;
+    proxy_buffering off;
+    proxy_cache off;
+    gzip off;
+    proxy_read_timeout 30s;
+    client_max_body_size 384k;
+}</code></pre>
+        <p>Keep the trailing slash in <code>proxy_pass</code> so Nginx strips <code>/timer/</code> before forwarding. Run <code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code>. Visiting <code>https://example.edu/timer</code> redirects to <code>/timer/</code>. Use that full address in the browser or Windows launcher. Python’s <code>--public-url</code> takes only the origin. <a href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">Nginx path forwarding</a></p>
+        <h3>Choose a pairing code</h3>
+        <pre><code>python3 server.py --public-url https://example.edu --pairing-code RoomTimer2026
+python server.py --lan --open --pairing-code RoomTimer2026</code></pre>
+        <p>Replace the example with 6–32 letters or digits. Pairing is case-insensitive. Run with the same argument on each start to keep that code, or omit it to generate a fresh random code. Controllers pair again after a restart.</p>
+        <h3>Automatic shutdown</h3>
+        <p>Run the command on the machine hosting Python. Use <code>--run-for</code> with a positive number of seconds (<code>90</code> or <code>90s</code>), or combine hours, minutes, and seconds in order (<code>2h30m</code> or <code>1m15s</code>).</p>
+        <pre><code>python3 server.py --public-url https://timer.example.edu --run-for 2h30m
+python server.py --lan --open --run-for 45m
+python server.py --help</code></pre>
+        <p>The clock starts when the server is ready and counts idle time. At expiry the server closes its connections and exits with status <code>0</code>, even if a countdown is running. Saved queues and settings are kept. On restart, the timer is ready to start. Omit the option to keep the server running until stopped manually. If you use a process manager, configure it to leave a successful exit stopped.</p>
+        <p><a href="https://nginx.org/en/docs/http/configuring_https_servers.html">Nginx HTTPS setup</a> · <a href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering">Nginx proxy buffering</a> · <a href="https://certbot.eff.org/instructions">Certbot installation</a></p>
+      </section>
+    </div>
+  </main>
+
+  <main class="guide-content" lang="zh-CN" data-guide-lang="zh">
+    <section class="panel guide-intro">
+      <h2>选择使用方式</h2>
+      <div class="guide-modes">
+        <div><h3>独立计时</h3><p>双击 <code>display.html</code>，输入分钟和秒，点<strong>设置时长</strong>，即可开始、暂停、继续或重置。服务器的投影页也可点<strong>独立计时</strong>使用这套控件。</p></div>
+        <div><h3>离线控制台</h3><p>双击 <code>console.html</code>，可在本机管理倒计时和小组队列。请保留完整的 <code>web</code> 文件夹。点<strong>打开投影页</strong>可另开窗口，投影时保持控制台打开。</p></div>
+        <div><h3>在线或局域网</h3><p>打开服务地址并配对控制台，即可在另一台电脑操作现场投影。投影页使用<strong>跟随控制台</strong>。</p></div>
+      </div>
+    </section>
+    <div class="guide-grid">
+      <section class="panel">
+        <h2>组织演示</h2>
+        <ol>
+          <li>空队列也能开始计时，当前显示 <code>N/A</code>。需要小组时，每行粘贴一个组名。选中组名后点<strong>设为当前</strong>才会切组。</li>
+          <li>点<strong>批量编辑</strong>可拖动排序、勾选待删除的小组。点<strong>应用更改</strong>后统一生效。计时进行中删除当前组需要确认。</li>
+          <li>设置默认时长、预警、铃声和音量，点<strong>保存设置</strong>。选择铃声旁的<strong>试听</strong>会在当前电脑播放。默认铃声是三声短滴，间隔逐次缩短，音调和响度逐次升高，最后接一声约 1 秒的高音长滴。</li>
+          <li>从控制台操作计时。归零会停在 <code>00:00</code>。点<strong>下一组</strong>后，再点<strong>开始</strong>。</li>
+        </ol>
+        <p>在公共服务、局域网和浏览器离线模式之间，可用<strong>导出队列和设置</strong>与<strong>导入备份</strong>转移数据。</p>
+      </section>
+      <section class="panel">
+        <h2>准备投影</h2>
+        <ol>
+          <li>Windows 上按 <kbd>Win</kbd> + <kbd>P</kbd>，选择<strong>扩展</strong>。</li>
+          <li>在现场电脑直接打开普通投影页。默认会播放设定的到时铃声。需要安静计时时，选择<strong>静音</strong>或把音量设为 <code>0</code>。</li>
+          <li>把投影窗口移到第二块屏幕。选<strong>浅色主题</strong>或<strong>深色主题</strong>，再点<strong>全屏</strong>。按 <kbd>Esc</kbd> 恢复控件。</li>
+        </ol>
+        <p>如果浏览器要求先点击页面，点<strong>全屏</strong>时也会启用声音。需要时也可以点投影页的<strong>启用声音</strong>。可在控制台点<strong>在投影端试听</strong>检查现场音响。</p>
+        <p>最后 10 秒先轻缓变化 5 秒，再加强 3 秒，最后 2 秒交替明暗。系统开启减少动态效果时，画面保持同一主题。</p>
+      </section>
+      <section class="panel">
+        <h2>使用 Windows 局域网备用</h2>
+        <p>现场电脑安装 Python 3.10+ 后，双击 <code>start.bat</code> 并输入 <kbd>L</kbd>。脚本会打开本机控制台，并显示教师使用的局域网地址和配对码。</p>
+        <p>在可信的 Windows 网络配置文件上允许入站 TCP <code>8765</code>。教师电脑可用 PowerShell 测试连通性。</p>
+        <pre><code>Test-NetConnection 192.168.1.20 -Port 8765</code></pre>
+        <p>将示例 IP 换成现场机的地址。若地址和防火墙均正确但仍连不通，可使用允许互通的热点，或改用现场控制台。</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>显示当前时间</h2>
+        <p>打开<strong>时钟</strong>或双击 <code>clock.html</code>。主钟默认使用电脑当前时区，可调整主钟字号、改选主时区，并勾选要在下方用较小字号显示的城市。</p>
+        <p>可选择<strong>本机时间</strong>、<strong>网络时间</strong>或<strong>同时显示</strong>。网络时间取自倒计时服务器的系统时钟。服务器上的页面自动向同一服务同步。直接打开本地 HTML 时，填入控制台的 HTTP 或 HTTPS 地址（如有 <code>/timer/</code> 等子路径，一并填写），再点<strong>立即同步</strong>。本机时间可离线使用。</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>Presentation 与 Q&amp;A 双阶段计时</h2>
+        <p>在控制台勾选<strong>每组两阶段</strong>，分别设置 Presentation 和 Q&amp;A 时长，点保存后<strong>打开投影页</strong>。投影显示当前组、阶段和待场队列。在线、局域网和本机离线控制台都支持。</p>
+        <p>勾选<strong>自动开始 Q&amp;A</strong>可连续计时。关闭时，Presentation 停在 <code>00:00</code>，在控制台点<strong>开始 Q&amp;A</strong>继续。问答归零后，点<strong>下一组</strong>准备下一组的 Presentation。<strong>重置</strong>会回到当前组的 Presentation。计时中修改的阶段时长在重置或切组后生效。</p>
+        <p>单页使用时，双击 <code>two-stage.html</code> 或在双阶段投影页点<strong>独立计时</strong>。宽屏的操作控件在右侧。全屏时按 <kbd>Esc</kbd> 恢复控件。</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>恢复或清除临时状态</h2>
+        <p>浏览器可在约 30 分钟内恢复本机计时、队列草稿和模式选择。正在运行的本机计时保留原截止时间。关闭期间归零的页面会显示 <code>00:00</code>，不会补播铃声。在线投影以服务器为准。重新打开控制台时，如果浏览器没有恢复原标签页会话，请重新配对。</p>
+        <p>点<strong>清除临时状态</strong>可删除这些记录并重置本机计时进度。已保存的队列、设置和服务端正在进行的计时会保留。浏览器可能为不同的本地 HTML 文件单独保存状态，可分别打开对应页面清除。</p>
+      </section>
+      <section class="panel guide-public">
+        <h2>使用公共服务器</h2>
+        <h3>先按使用场景选命令</h3>
+        <div class="guide-table">
+          <table>
+            <thead><tr><th scope="col">使用场景</th><th scope="col">启动方式</th><th scope="col">浏览器打开</th></tr></thead>
+            <tbody>
+              <tr><td>已有 Nginx HTTPS 站点</td><td><code>python3 server.py --public-url https://example.edu</code></td><td>若挂在子路径，打开 <code>https://example.edu/timer/</code></td></tr>
+              <tr><td>现场电脑运行服务，其他电脑通过同一局域网访问</td><td><code>python server.py --lan</code> 或 <code>start.bat lan</code></td><td>启动时打印的局域网地址，例如 <code>http://192.168.1.20:8765/</code></td></tr>
+              <tr><td>只在这台电脑使用，无需启动服务</td><td>双击 <code>web/console.html</code></td><td>自动打开本地文件，进入离线模式</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>--public-url</code> 告诉 Python 允许哪个浏览器来源发起配对和控制。浏览器通过 HTTPS 访问时，Nginx 仍可用 HTTP 转发给 Python。这里填写协议、域名和非默认端口（如有）。例如，控制台在 <code>https://example.edu/timer/</code> 时，这个参数填 <code>https://example.edu</code>。</p>
+        <p><code>--lan</code> 启动局域网 HTTP 服务，默认监听所有 IPv4 网卡，保存到 <code>data/lan.json</code>，并忽略公共地址设置。</p>
+        <p><code>COUNTDOWN_PUBLIC_URL</code> 是可选项。想通过环境变量配置服务器时，可用它提供与 <code>--public-url</code> 相同的来源地址。想让 Windows 客户端的 <code>start.bat</code> 跳过提示时，可用它填完整控制台地址，包括 <code>/timer/</code> 等子路径。习惯在命令里直接写 <code>--public-url</code> 或在提示里输入地址时，可以不设置这个变量。</p>
+        <p>下面以 Linux 上的 <code>/opt/countdown</code> 为例。将 <code>server.py</code>、<code>timer_state.py</code> 和完整的 <code>web/</code> 文件夹复制到该目录。服务器需有 Python 3.10+，运行程序的账户需能写入 <code>/opt/countdown/data</code>。两种部署方式共用数据文件和端口，切换前先停止原有进程。</p>
+        <pre><code># 在服务器上的项目目录中执行
+sudo install -d /opt/countdown
+sudo cp -R server.py timer_state.py web /opt/countdown/
+sudo install -d -o "$(id -un)" /opt/countdown/data
+python3 --version</code></pre>
+        <h3>A. 不使用 HTTPS，直接通过 HTTP 访问</h3>
+        <p>让 Python 监听所有 IPv4 接口。在服务器防火墙和云平台安全组中，允许参与者的 IP 或私有网络访问入站 TCP <code>8765</code>。</p>
+        <p>下面的 <code>env -u</code> 只在这次启动 Python 时取消继承来的 <code>COUNTDOWN_PUBLIC_URL</code>。当前终端里的变量会保留。</p>
+        <pre><code>cd /opt/countdown
+env -u COUNTDOWN_PUBLIC_URL python3 server.py --host 0.0.0.0 --port 8765</code></pre>
+        <p>在浏览器直接访问 <code>http://服务器IP:8765/</code>，投影地址是 <code>http://服务器IP:8765/display</code>。HTTP 会明文传输配对码和控制请求，适用于可信网络或 VPN 内的临时部署。</p>
+        <h3>B. 使用 Nginx 配置 HTTPS</h3>
+        <ol>
+          <li>将域名 DNS 指向服务器，放行 Nginx 的入站 TCP <code>80</code> 和 <code>443</code>。Python 只监听本机，外部无需开放 <code>8765</code>。</li>
+          <li>准备该域名的证书。已有证书可直接配置。若要用 Certbot 申请，先安装 Certbot 和 Nginx 插件，启用下面的临时 HTTP 站点并重新加载 Nginx。</li>
+        </ol>
+        <pre><code>server {
+    listen 80;
+    server_name timer.example.edu;
+    location / { return 200 "Countdown certificate setup\n"; }
+}</code></pre>
+        <p>在 Debian 或 Ubuntu，将上述内容保存到 <code>/etc/nginx/sites-available/countdown</code>，并创建符号链接。站点已启用时，从第二条命令开始。</p>
+        <pre><code>sudo ln -s /etc/nginx/sites-available/countdown /etc/nginx/sites-enabled/countdown
+sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+sudo certbot certonly --nginx -d timer.example.edu</code></pre>
+        <p>在同一台机器上启动 Python。<code>--public-url</code> 填浏览器实际使用的 HTTPS 地址。</p>
+        <pre><code>cd /opt/countdown
+python3 server.py --host 127.0.0.1 --port 8765 --public-url https://timer.example.edu</code></pre>
+        <p>也可以用环境变量提供同一个地址。两种写法同时使用时，Python 以命令行的 <code>--public-url</code> 为准。</p>
+        <pre><code>COUNTDOWN_PUBLIC_URL=https://timer.example.edu python3 server.py --host 127.0.0.1 --port 8765</code></pre>
+        <p>Windows 上的 <code>start.bat</code> 也读取这个可选变量，有值时会直接打开公共控制台。下面的设置仅对当前命令提示符窗口生效。要启动局域网备用，可运行 <code>start.bat lan</code>。</p>
+        <pre><code>set "COUNTDOWN_PUBLIC_URL=https://timer.example.edu"
+start.bat</code></pre>
+        <p>用以下配置替换临时站点。例如在 Debian 或 Ubuntu，可保存为 <code>/etc/nginx/sites-available/countdown</code>，并在 <code>sites-enabled/</code> 创建符号链接启用。将示例域名和证书路径换成自己的。</p>
+        <pre><code>server {
+    listen 80;
+    server_name timer.example.edu;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name timer.example.edu;
+    ssl_certificate /etc/letsencrypt/live/timer.example.edu/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/timer.example.edu/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_set_header Host $host;
+        proxy_buffering off;
+        proxy_cache off;
+        gzip off;
+        proxy_read_timeout 30s;
+        client_max_body_size 384k;
+    }
+}</code></pre>
+        <pre><code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+curl -N https://timer.example.edu/api/events</code></pre>
+        <p>最后一条命令应先输出 <code>welcome</code> 事件，随后收到心跳。按 <kbd>Ctrl</kbd> + <kbd>C</kbd> 结束测试。浏览器打开 <code>https://timer.example.edu/</code>，输入 Python 服务打印的配对码。保持进程运行，默认每次重启都会生成新的配对码。</p>
+        <h3 id="subpath-cn">在已有网站下挂载 /timer/</h3>
+        <p>如果 Nginx 已在提供 <code>https://example.edu</code>，按下面方式启动 Python，并在该网站现有的 HTTPS <code>server</code> 块中加入这两个 <code>location</code>。继续使用站点已有的域名和证书。</p>
+        <pre><code>python3 server.py --public-url https://example.edu</code></pre>
+        <pre><code>location = /timer {
+    return 308 /timer/$is_args$args;
+}
+
+location ^~ /timer/ {
+    proxy_pass http://127.0.0.1:8765/;
+    proxy_set_header Host $host;
+    proxy_buffering off;
+    proxy_cache off;
+    gzip off;
+    proxy_read_timeout 30s;
+    client_max_body_size 384k;
+}</code></pre>
+        <p>保留 <code>proxy_pass</code> 末尾的斜杠，Nginx 转发时会去掉 <code>/timer/</code> 前缀。执行 <code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code> 后，访问 <code>https://example.edu/timer</code> 会自动跳转到 <code>/timer/</code>。浏览器或 Windows 启动脚本填写完整的 <code>https://example.edu/timer/</code>。Python 的 <code>--public-url</code> 只填写站点源地址。<a href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">Nginx 路径转发说明</a></p>
+        <h3>手动指定配对码</h3>
+        <pre><code>python3 server.py --public-url https://example.edu --pairing-code RoomTimer2026
+python server.py --lan --open --pairing-code RoomTimer2026</code></pre>
+        <p>将示例换成 6–32 位英文字母或数字，配对时不区分大小写。每次启动传入同一个值即可沿用；省略参数时会随机生成。服务重启后控制台仍需重新配对。</p>
+        <h3>限时运行并自动退出</h3>
+        <p>在运行 Python 的机器上加 <code>--run-for</code>。可以用正整数秒（<code>90</code> 或 <code>90s</code>），也可以按小时、分钟、秒顺序组合（<code>2h30m</code> 或 <code>1m15s</code>）。</p>
+        <pre><code>python3 server.py --public-url https://timer.example.edu --run-for 2h30m
+python server.py --lan --open --run-for 45m
+python server.py --help</code></pre>
+        <p>从服务就绪时开始计时，空闲时间也计入。到期后服务关闭连接，以状态码 <code>0</code> 退出，即使某组还在计时。已保存的队列和设置会保留，再启动时计时器处于待开始状态。省略参数时由你手动停止。若使用进程管理器，请避免让它在正常退出后立即重启服务。</p>
+        <p><a href="https://nginx.org/en/docs/http/configuring_https_servers.html">Nginx HTTPS 配置</a> · <a href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering">Nginx 代理缓冲选项</a> · <a href="https://certbot.eff.org/instructions">Certbot 安装说明</a></p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

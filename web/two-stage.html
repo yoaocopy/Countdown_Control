@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Two-stage timer</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./common.js"></script>
+  <script defer src="./offline.js"></script>
+  <script defer src="./projection.js"></script>
+  <script defer src="./two-stage.js"></script>
+</head>
+<body class="projection two-stage" data-display-mode="standalone" data-page-title="twoStage">
+  <header class="display-controls">
+    <a id="single-stage" href="./display.html" target="_blank" rel="noopener" data-t="singleStage">Open single timer</a>
+    <button id="display-mode" type="button" data-t="followProjection">Follow console</button>
+    <a href="./clock.html" target="_blank" rel="noopener" data-t="wallClock">Clock</a>
+    <button id="display-theme" type="button" data-t="lightTheme">Light theme</button>
+    <button id="language" type="button" aria-label="Switch to Chinese">CN/EN</button>
+    <button id="clear-temporary" type="button" data-t="clearTemporary">Clear temporary state</button>
+    <a href="./guide.html" target="_blank" rel="noopener" data-t="guide">Guide</a>
+    <button id="enable-sound" type="button" hidden data-t="enableSound">Enable sound</button>
+    <button id="fullscreen" type="button" data-t="fullscreen">Fullscreen</button>
+  </header>
+  <p id="display-notice" class="display-notice" role="status" hidden></p>
+  <p id="connection" class="display-connection" role="status" hidden></p>
+  <div class="two-stage-layout">
+    <main class="stage">
+      <section class="stage-current">
+        <h1 data-t="current">Current</h1>
+        <p id="current-name" class="stage-name" data-placeholder>N/A</p>
+      </section>
+      <section id="clock" class="stage-clock">
+        <div id="stage-identification" class="stage-identification">
+          <p id="active-stage" aria-live="polite">Presentation</p>
+          <p id="next-stage" class="next-stage"><span data-t="nextStage">Next stage</span> <strong>Q&amp;A</strong> <span id="next-time">02:00</span></p>
+        </div>
+        <div id="timer" class="timer">05:00</div>
+        <div id="phase" class="stage-phase" role="status"></div>
+      </section>
+      <section class="upcoming">
+        <div><h2 data-t="nextUp">Next up</h2><p id="first">—</p></div>
+        <div><h2 data-t="onDeck">After next</h2><p id="second">—</p></div>
+      </section>
+    </main>
+    <aside id="standalone-controls" class="standalone-controls two-stage-controls">
+      <form id="stage-times" class="stage-times">
+        <fieldset id="stage-fields">
+          <legend class="sr-only" data-t="saveTimes">Set times</legend>
+          <fieldset>
+            <legend>Presentation</legend>
+            <label><span data-t="timerMinutes">Minutes</span><input id="presentation-minutes" type="number" min="0" max="99" value="5" inputmode="numeric" required></label>
+            <label><span data-t="timerSeconds">Seconds</span><input id="presentation-seconds" type="number" min="0" max="59" value="0" inputmode="numeric" required></label>
+          </fieldset>
+          <fieldset>
+            <legend>Q&amp;A</legend>
+            <label><span data-t="timerMinutes">Minutes</span><input id="questions-minutes" type="number" min="0" max="99" value="2" inputmode="numeric" required></label>
+            <label><span data-t="timerSeconds">Seconds</span><input id="questions-seconds" type="number" min="0" max="59" value="0" inputmode="numeric" required></label>
+          </fieldset>
+          <button type="submit" data-t="saveTimes">Set times</button>
+        </fieldset>
+      </form>
+      <div class="stage-operations">
+        <label class="auto-advance"><input id="auto-advance" type="checkbox"><span data-t="autoAdvance">Automatically start Q&amp;A</span></label>
+        <div class="actions">
+          <button id="stage-start" type="button" class="primary" data-t="start">Start</button>
+          <button id="stage-pause" type="button" data-t="pause" hidden>Pause</button>
+          <button id="stage-reset" type="button" data-t="reset">Reset</button>
+        </div>
+      </div>
+      <div class="standalone-sound-controls">
+        <label><span data-t="sound">Finish sound</span><select id="stage-sound">
+          <option value="beep" data-t="beep">Rising beeps</option><option value="double" data-t="double">Double beep</option>
+          <option value="tone" data-t="tone">Tone</option><option value="chime" data-t="chime">Chime</option>
+          <option value="bell" data-t="bell">Bell</option><option value="mute" data-t="mute">Mute</option>
+        </select></label>
+        <label><span><span data-t="volume">Volume</span> <output id="stage-volume-value" for="stage-volume">70%</output></span>
+          <input id="stage-volume" type="range" min="0" max="100" value="70">
+        </label>
+        <button id="stage-preview" type="button" data-t="testSound">Test sound</button>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>

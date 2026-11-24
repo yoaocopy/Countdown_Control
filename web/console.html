@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Demo Countdown</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./common.js"></script>
+  <script defer src="./offline.js"></script>
+  <script defer src="./console.js"></script>
+</head>
+<body class="console">
+  <header class="topbar">
+    <h1 data-t="title">Project Demo Countdown</h1>
+    <div class="toolbar">
+      <span id="mode" class="tag"></span>
+      <span id="connection" class="tag" role="status"></span>
+      <button id="switch-mode" type="button"></button>
+      <button id="language" type="button" aria-label="Switch to Chinese">CN/EN</button>
+      <button id="clear-temporary" type="button" data-t="clearTemporary">Clear temporary state</button>
+      <a href="./guide.html" target="_blank" rel="noopener" data-t="guide">Guide</a>
+      <a href="./clock.html" target="_blank" rel="noopener" data-t="wallClock">Clock</a>
+      <a id="open-display" href="./display" target="_blank" rel="noopener" data-t="openDisplay">Open projection</a>
+    </div>
+  </header>
+  <main class="dashboard">
+    <section class="panel pairing">
+      <div><h2 id="session-title">Controller pairing</h2><p id="pair-status"></p></div>
+      <form id="pair-form">
+        <label class="sr-only" for="code" data-t="code">Pairing code</label>
+        <input id="code" type="password" maxlength="32" autocomplete="off" spellcheck="false" required>
+        <button class="primary" data-t="pair">Pair</button>
+      </form>
+      <form id="server-form" hidden>
+        <label class="sr-only" for="server-url" data-t="serverAddress">Server address</label>
+        <input id="server-url" type="url" placeholder="https://timer.example.edu" required>
+        <button class="primary" data-t="connectServer">Open online console</button>
+      </form>
+    </section>
+    <p id="notice" class="notice" role="status" hidden></p>
+    <div class="dashboard-columns">
+      <div class="stack">
+        <section id="local-stage" class="panel timer-panel">
+          <div class="section-heading"><h2 data-t="current">Current</h2>
+            <div class="timer-status"><span id="console-stage" class="tag" hidden></span><span id="phase" class="tag" role="status"></span></div>
+          </div>
+          <p id="current-name" class="current-name" data-placeholder>N/A</p>
+          <div id="timer" class="timer">05:00</div>
+          <div class="actions">
+            <button data-command="start" class="primary" data-t="start">Start</button>
+            <button data-command="questions" class="primary" data-t="startQuestions" hidden>Start Q&amp;A</button>
+            <button data-command="pause" data-t="pause" hidden>Pause</button>
+            <button data-command="resume" class="primary" data-t="resume" hidden>Resume</button>
+            <button data-command="reset" data-t="reset">Reset</button>
+            <button data-command="next" data-t="next">Next group</button>
+            <button id="local-fullscreen" type="button" hidden data-t="fullscreen">Fullscreen</button>
+          </div>
+          <div class="upcoming local-stage-queue">
+            <div><h3 data-t="nextUp">Next up</h3><p id="local-next">—</p></div>
+            <div><h3 data-t="onDeck">After next</h3><p id="local-after">—</p></div>
+          </div>
+        </section>
+        <section class="panel">
+          <h2 data-t="projectionAudio">Projection audio</h2>
+          <p data-t="audioHelp">The projection plays the finish sound. Select Mute or set volume to 0 for a silent countdown.</p>
+          <button id="preview" data-write data-t="preview">Preview on projection</button>
+        </section>
+        <section class="panel">
+          <h2 data-t="settings">Timer settings</h2>
+          <form id="settings-form">
+            <fieldset id="settings-fields" disabled>
+              <div class="stage-settings">
+                <label class="stage-option"><input id="two-stage-groups" type="checkbox"><span data-t="twoStageGroups">Two stages per group</span></label>
+                <div class="stage-duration-grid">
+                  <fieldset>
+                    <legend id="presentation-time-label" data-t="defaultDuration">Default duration</legend>
+                    <label><span data-t="timerMinutes">Minutes</span><input id="minutes" type="number" min="0" max="99" required></label>
+                    <label><span data-t="timerSeconds">Seconds</span><input id="seconds" type="number" min="0" max="59" required></label>
+                  </fieldset>
+                  <fieldset id="questions-fields" hidden disabled>
+                    <legend>Q&amp;A</legend>
+                    <label><span data-t="timerMinutes">Minutes</span><input id="questions-minutes" type="number" min="0" max="99" value="2" required></label>
+                    <label><span data-t="timerSeconds">Seconds</span><input id="questions-seconds" type="number" min="0" max="59" value="0" required></label>
+                  </fieldset>
+                </div>
+                <label id="stage-auto-option" class="stage-option" hidden><input id="auto-advance" type="checkbox"><span data-t="autoAdvance">Automatically start Q&amp;A</span></label>
+              </div>
+              <div class="settings-warning">
+                <label><span data-t="warning">Warning (seconds)</span><input id="warning" type="number" min="0" max="5999" required></label>
+                <label><span data-t="effect">Warning effect</span><select id="effect">
+                  <option value="off" data-t="off">Off</option><option value="color" data-t="color">Color</option><option value="pulse" data-t="pulse">Pulse</option>
+                </select></label>
+              </div>
+              <div class="settings-audio">
+                <div class="sound-picker">
+                  <label for="sound" data-t="sound">Finish sound</label>
+                  <div class="sound-picker-actions">
+                    <select id="sound">
+                      <option value="beep" data-t="beep">Rising beeps</option><option value="double" data-t="double">Double beep</option><option value="tone" data-t="tone">Tone</option>
+                      <option value="chime" data-t="chime">Chime</option><option value="bell" data-t="bell">Bell</option><option value="mute" data-t="mute">Mute</option>
+                    </select>
+                    <button id="local-preview" type="button" data-t="testSound">Test sound</button>
+                  </div>
+                </div>
+                <label><span><span data-t="volume">Volume</span> <output id="volume-value" for="volume">70%</output></span>
+                  <input id="volume" type="range" min="0" max="100" value="70">
+                </label>
+              </div>
+              <button class="primary" data-t="save">Save settings</button>
+            </fieldset>
+          </form>
+        </section>
+      </div>
+      <section class="panel queue-panel">
+        <div class="section-heading"><h2 data-t="queue">Group queue</h2><span id="group-count" class="tag"></span></div>
+        <p id="empty" data-t="empty">Groups are optional.</p>
+        <div id="queue-tools" class="actions queue-tools" hidden>
+          <button id="use-group" class="primary" type="button" data-write data-t="useGroup">Set as current</button>
+          <button id="edit-queue" type="button" data-write data-t="editQueue">Batch edit</button>
+        </div>
+        <div id="batch-tools" class="batch-tools" hidden>
+          <p data-t="batchHelp">Drag to reorder. Check groups to delete them on apply.</p>
+          <div class="actions">
+            <button id="apply-queue" class="primary" type="button" data-write data-t="applyQueue">Apply changes</button>
+            <button id="cancel-queue" type="button" data-t="cancel">Cancel</button>
+            <span id="batch-count" class="tag" aria-live="polite"></span>
+          </div>
+          <p id="batch-conflict" class="notice" data-t="batchConflict" role="status" hidden>Queue changed in another session. Cancel and reopen batch edit.</p>
+        </div>
+        <ol id="queue"></ol>
+        <form id="add-form">
+          <label for="names" data-t="names">Paste group names, one per line</label>
+          <textarea id="names" rows="4" maxlength="24400" required></textarea>
+          <button class="primary" data-write data-t="add">Add groups</button>
+        </form>
+        <hr>
+        <div class="actions">
+          <button id="export" data-write data-t="export">Export queue and settings</button>
+          <button id="import" data-write data-t="import">Import backup</button>
+          <input type="file" id="import-file" accept=".json,application/json" hidden>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
